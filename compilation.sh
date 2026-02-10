@@ -2,7 +2,7 @@
 
 echo "Compilation du menu de la borne d'arcade"
 echo "Veuillez patienter"
-javac -cp .:/home/pi/git/MG2D *.java
+javac -cp .:. *.java
 
 cd projet
 
@@ -13,7 +13,7 @@ do
     cd $i
     echo "Compilation du jeu "$i
     echo "Veuillez patienter"
-    javac -cp .:../..:/home/pi/git/MG2D *.java
+    javac -cp .:../.. *.java 2>/dev/null || true
     cd ..
 done
 

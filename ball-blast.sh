@@ -1,2 +1,4 @@
+#!/bin/bash
+xdotool mousemove 1280 1024
 cd projet/ball-blast
-python3.7 ./src
+python3 ./src
