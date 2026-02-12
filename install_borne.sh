@@ -73,31 +73,31 @@ info "Installation de MG2D..."
 cd ~
 if [ -d "MG2D" ]; then
     warn "MG2D existe déjà, mise à jour..."
-    cd MG2D
-    git pull
 else
+    mkdir -p git/MG2D
+    cd git/MG2D
     git clone https://github.com/synave/MG2D.git
+    mv MG2D/ ../../MG2D
 fi
 
 # Compilation de MG2D
 info "Compilation de MG2D..."
 cd ~/MG2D
-javac -d . geometry/*.java
-javac -d . *.java
+javac *.java
 
 # Ajout du classpath dans .bashrc si pas déjà présent
 info "Configuration du classpath..."
-if ! grep -q "export CLASSPATH=.*MG2D" ~/.bashrc; then
+if ! grep -q "export CLASSPATH=$CLASSPATH:.:~" ~/.bashrc; then
     echo "" >> ~/.bashrc
     echo "# Classpath pour MG2D" >> ~/.bashrc
-    echo "export CLASSPATH=\"\$CLASSPATH:~/MG2D\"" >> ~/.bashrc
+    echo "export CLASSPATH=$CLASSPATH:.:~" >> ~/.bashrc
     info "Classpath ajouté à ~/.bashrc"
 else
     info "Classpath déjà configuré dans ~/.bashrc"
 fi
 
 # Charger le nouveau classpath
-export CLASSPATH="$CLASSPATH:~/MG2D"
+export export CLASSPATH=$CLASSPATH:.:~
 
 # Installation du programme de la borne
 info "Installation du programme de la borne..."
@@ -186,3 +186,4 @@ echo "  N'oubliez pas de sourcer votre .bashrc :"
 echo "  source ~/.bashrc"
 echo ""
 echo "=========================================="
+
