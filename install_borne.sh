@@ -83,16 +83,18 @@ sudo apt-get install -y \
 # ─── Installation de MG2D ─────────────────────────────────────────────────────
 
 MG2D_DIR="$HOME/MG2D"
+MG2D_TMP=$(mktemp -d)
 
-info "Installation de MG2D dans $MG2D_DIR..."
-if [ -d "$MG2D_DIR/.git" ]; then
+info "Installation/mise à jour de MG2D dans $MG2D_DIR..."
+if [ -d "$MG2D_DIR" ]; then
     warn "MG2D existe déjà, mise à jour..."
-    git -C "$MG2D_DIR" pull
-else
-    # Supprimer un éventuel dossier vide/corrompu avant de cloner
-    rm -rf "$MG2D_DIR"
-    git clone https://github.com/synave/MG2D.git "$MG2D_DIR"
 fi
+# On clone toujours dans un dossier temporaire, puis on déplace le
+# sous-dossier MG2D/ (contenu du repo, pas le repo lui-même)
+git clone https://github.com/synave/MG2D.git "$MG2D_TMP/MG2D"
+rm -rf "$MG2D_DIR"
+mv "$MG2D_TMP/MG2D" "$MG2D_DIR"
+rm -rf "$MG2D_TMP"
 
 info "Compilation de MG2D..."
 cd "$MG2D_DIR"
