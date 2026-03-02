@@ -96,10 +96,6 @@ rm -rf "$MG2D_DIR"
 mv "$MG2D_TMP/MG2D/" "$MG2D_DIR"
 rm -rf "$MG2D_TMP"
 
-info "Compilation de MG2D..."
-cd "$MG2D_DIR"
-javac *.java
-
 # ─── Configuration du CLASSPATH ──────────────────────────────────────────────
 
 info "Configuration du CLASSPATH..."
@@ -118,6 +114,12 @@ else
 fi
 # Appliquer pour la session courante
 export CLASSPATH="${CLASSPATH:+$CLASSPATH:}.:$HOME/MG2D"
+
+# ─── Compilation de MG2D ─────────────────────────────────────────────────────
+
+info "Compilation de MG2D..."
+cd "$MG2D_DIR"
+javac *.java
 
 # ─── Installation de la borne d'arcade ───────────────────────────────────────
 
@@ -206,4 +208,5 @@ echo "  N'oubliez pas d'appliquer le nouveau CLASSPATH :"
 echo "  source ~/.bashrc"
 echo ""
 echo "=========================================="
+
 
