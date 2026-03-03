@@ -175,12 +175,6 @@ fi
 
 info "Tous les fichiers nécessaires sont présents."
 
-# ─── Compilation du launcher principal ───────────────────────────────────────
-
-info "Compilation du launcher principal..."
-cd "$BORNE_DIR"
-javac -cp ".:$HOME/MG2D" ./*.java
-
 # ─── Configuration GitHub Pages (documentation en ligne) ─────────────────────
 
 echo ""
@@ -243,6 +237,10 @@ else
     warn "  + git config --global credential.helper store  +  git push (saisir PAT)"
 fi
 
+# ─── Start auto ───────────────────────────────────────────────────────────────
+
+mv borne.desktop ~/.config/autostart/
+
 # ─── Résumé ───────────────────────────────────────────────────────────────────
 
 echo ""
@@ -271,4 +269,9 @@ echo "  source ~/.bashrc"
 echo ""
 echo "=========================================="
 
+# ─── Compilation du launcher principal ───────────────────────────────────────
 
+echo -e "${GREEN}Lancement de la borne"
+echo "=========================================="
+
+./lancerBorne.sh
