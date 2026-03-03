@@ -181,6 +181,68 @@ info "Compilation du launcher principal..."
 cd "$BORNE_DIR"
 javac -cp ".:$HOME/MG2D" ./*.java
 
+# ─── Configuration GitHub Pages (documentation en ligne) ─────────────────────
+
+echo ""
+info "Configuration optionnelle : publication automatique de la doc sur GitHub Pages"
+echo ""
+echo "  URL cible : https://nonov1012.github.io/maintenance_borne-arcade/"
+echo ""
+echo "  Prérequis : un Personal Access Token (PAT) GitHub avec le scope 'repo'"
+echo "  Créer sur : github.com → Settings → Developer settings → Personal access tokens"
+echo ""
+# Lire depuis /dev/tty pour fonctionner même si stdin est un pipe (curl | bash)
+GITHUB_PAT=""
+read -rsp "  GitHub PAT (Entrée pour ignorer) : " GITHUB_PAT < /dev/tty
+echo ""
+
+if [ -n "$GITHUB_PAT" ]; then
+    # Extraire le nom d'utilisateur depuis l'URL du remote
+    GITHUB_USER=$(git -C "$BORNE_DIR" remote get-url origin \
+        | sed 's|https://github.com/\([^/]*\)/.*|\1|')
+
+    # Configurer credential.helper store
+    git config --global credential.helper store
+
+    # Écrire les credentials dans ~/.git-credentials (format standard)
+    touch ~/.git-credentials
+    chmod 600 ~/.git-credentials
+    # Supprimer l'entrée github.com existante et réécrire proprement
+    grep -v "@github.com" ~/.git-credentials > /tmp/.git-creds-tmp 2>/dev/null || true
+    echo "https://${GITHUB_USER}:${GITHUB_PAT}@github.com" >> /tmp/.git-creds-tmp
+    mv /tmp/.git-creds-tmp ~/.git-credentials
+
+    # Activer github_pages dans admin/config.json
+    if [ -f "$BORNE_DIR/admin/config.json" ]; then
+        python3 - << PYEOF
+import json
+path = "$BORNE_DIR/admin/config.json"
+cfg = json.loads(open(path).read())
+cfg["github_pages"] = True
+open(path, "w").write(json.dumps(cfg, indent=2, ensure_ascii=False) + "\n")
+PYEOF
+        info "github_pages activé dans admin/config.json"
+    fi
+
+    # Commit initial du dossier docs/ et push
+    git -C "$BORNE_DIR" add docs/
+    git -C "$BORNE_DIR" commit -m "init: dossier docs/ pour GitHub Pages" \
+        2>/dev/null || true   # rien à commiter si déjà présent
+    git -C "$BORNE_DIR" push \
+        && info "docs/ poussé sur GitHub" \
+        || warn "Push initial échoué — vérifiez que le PAT a le scope 'repo'"
+
+    echo ""
+    info "PAT configuré. La doc sera publiée automatiquement après chaque génération."
+    info "Dernière étape manuelle sur github.com :"
+    info "  Repository > Settings > Pages > Source : branche 'main', dossier '/docs'"
+    info "  URL : https://${GITHUB_USER}.github.io/maintenance_borne-arcade/"
+else
+    warn "PAT non renseigné — publication automatique désactivée."
+    warn "Configurable plus tard : admin/config.json → github_pages: true"
+    warn "  + git config --global credential.helper store  +  git push (saisir PAT)"
+fi
+
 # ─── Résumé ───────────────────────────────────────────────────────────────────
 
 echo ""

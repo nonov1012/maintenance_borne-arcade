@@ -1,4 +1,5 @@
 import java.awt.Font;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.nio.file.*;
 import javax.swing.*;
@@ -19,6 +20,7 @@ public class Graphique {
     private int TAILLEX;
     private int TAILLEY;
     private ClavierBorneArcade clavier;
+    private ComboDetecteur comboDetecteur;
     private BoiteSelection bs;
     private BoiteImage bi;
     private BoiteDescription bd;
@@ -52,6 +54,10 @@ public class Graphique {
 	clavier = new ClavierBorneArcade();
 	f.addKeyListener(clavier);
 	f.getP().addKeyListener(clavier);
+
+	comboDetecteur = new ComboDetecteur();
+	f.addKeyListener(comboDetecteur);
+	f.getP().addKeyListener(comboDetecteur);
 
 	/*Retrouver le nombre de jeux dispo*/
 	Path yourPath = FileSystems.getDefault().getPath("projet/");
@@ -264,6 +270,19 @@ public class Graphique {
 					}
 
 			}
+
+		// Combo → ouverture de l interface d administration
+		if (comboDetecteur.isComboDetecte()) {
+		    try {
+			Graphique.stopMusiqueFond();
+			Process adminProcess = new ProcessBuilder("python3", "admin/main.py").start();
+			adminProcess.waitFor();
+			Graphique.lectureMusiqueFond();
+		    } catch (Exception e) {
+			e.printStackTrace();
+		    }
+		}
+
 			f.rafraichir();
 		}//fin while true
     }

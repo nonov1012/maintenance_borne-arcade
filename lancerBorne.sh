@@ -2,7 +2,7 @@
 
 setxkbmap borne
 
-cd /home/borne_arcade
+cd /$HOME/borne_arcade
 echo "nettoyage des répertoires"
 echo "Veuillez patienter"
 ./clean.sh
@@ -11,7 +11,7 @@ echo "Veuillez patienter"
 echo "Lancement du  Menu"
 echo "Veuillez patienter"
 
-java -cp .:/home/MG2D Main
+java -cp .:/$HOME/MG2D Main
 
 ./clean.sh
 
