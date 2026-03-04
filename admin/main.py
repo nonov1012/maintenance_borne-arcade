@@ -42,8 +42,52 @@ _TAB_OFF    = (18,  18,  55)
 _BORDER     = (0,   80, 160)
 
 FONT_PATH = str(ADMIN_DIR.parent / "fonts" / "PrStart.ttf")
+IMG_BUTTON_DIR = ADMIN_DIR.parent / "img" / "button"
 CONTENT_Y = 148   # en-dessous de l'en-tête + onglets
 CONTENT_H = H - CONTENT_Y
+
+KEY_IMG_H = 22  # hauteur des icônes bouton dans la ligne d'aide
+
+
+def load_key_images():
+    imgs = {}
+    for key in ("f", "g", "h", "r", "t", "y"):
+        path = IMG_BUTTON_DIR / f"key_{key}.png"
+        try:
+            img = pygame.image.load(str(path)).convert_alpha()
+            ow, oh = img.get_size()
+            imgs[key] = pygame.transform.scale(img, (int(ow * KEY_IMG_H / oh), KEY_IMG_H))
+        except Exception:
+            imgs[key] = None
+    return imgs
+
+
+def draw_hint_line(screen, fs, key_imgs, x, y, color):
+    """Dessine la ligne d'aide avec images pour les touches boutons."""
+    segments = [
+        ("t", "←→ onglet   ↑↓ navigue   "),
+        ("k", "g"), ("t", " action   "),
+        ("k", "t"), ("t", " tout   "),
+        ("k", "f"), ("t", " ouvrir   "),
+        ("k", "r"), ("t", " retour   "),
+        ("k", "h"), ("t", " quitter"),
+    ]
+    cx = x
+    text_h = fs.get_height()
+    for kind, val in segments:
+        if kind == "t":
+            surf = fs.render(val, True, color)
+            screen.blit(surf, (cx, y + (KEY_IMG_H - text_h) // 2))
+            cx += surf.get_width()
+        else:
+            img = key_imgs.get(val)
+            if img:
+                screen.blit(img, (cx, y))
+                cx += img.get_width()
+            else:
+                surf = fs.render(val.upper(), True, color)
+                screen.blit(surf, (cx, y + (KEY_IMG_H - text_h) // 2))
+                cx += surf.get_width()
 
 
 def load_fonts():
@@ -58,7 +102,7 @@ def load_fonts():
     return fb, fm, fs
 
 
-def draw_header(screen: pygame.Surface, fonts, current_tab: int):
+def draw_header(screen: pygame.Surface, fonts, key_imgs, current_tab: int):
     fb, fm, fs = fonts
 
     pygame.draw.rect(screen, _HEADER_BG, (0, 0, W, 78))
@@ -67,11 +111,8 @@ def draw_header(screen: pygame.Surface, fonts, current_tab: int):
     # Titre
     screen.blit(fm.render("BORNE ARCADE  –  ADMINISTRATION", True, _ACCENT), (20, 8))
 
-    # Aide touches
-    screen.blit(
-        fs.render("←→ onglet   ↑↓ navigue   G action   T tout   F ouvrir   R retour   H quitter", True, _MUTED),
-        (20, 52),
-    )
+    # Aide touches avec images
+    draw_hint_line(screen, fs, key_imgs, 20, 48, _MUTED)
 
     # Onglets
     tab_y, tab_h = 88, 42
@@ -93,6 +134,7 @@ def main():
     clock = pygame.time.Clock()
 
     fonts = load_fonts()
+    key_imgs = load_key_images()
 
     tabs = [
         GamesTab(screen,   fonts, CONTENT_Y, CONTENT_H, ADMIN_DIR),
@@ -135,7 +177,7 @@ def main():
             last_tick = now
 
         screen.fill(_BG)
-        draw_header(screen, fonts, current)
+        draw_header(screen, fonts, key_imgs, current)
         tabs[current].draw()
         pygame.display.flip()
         clock.tick(FPS)

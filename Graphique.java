@@ -171,23 +171,22 @@ public class Graphique {
 						textesAffiches[pointeur.getValue()]=false;
 					}
 				}
-				if(frame==3){
+				if(frame==9){
 					if(textesAffiches[pointeur.getValue()]==false){
 						f.ajouter(tableau[pointeur.getValue()].getTexte());
 						textesAffiches[pointeur.getValue()]=true;
 					}
 				}
-				if(frame==6){
+				if(frame==18){
 					frame=-1;
 				}
 				frame++;
-				// System.out.println("frame n°"+frame);
 			}
 			catch (Exception e) {
 				System.err.println(e.getMessage());
 			}
 			try{
-				Thread.sleep(50);
+				Thread.sleep(16); // ~60 FPS (était 50ms = 20 FPS)
 			}catch(Exception e){}
 			
 			if(!fermetureMenu){

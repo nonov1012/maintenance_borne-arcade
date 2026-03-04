@@ -55,8 +55,8 @@ fi
 # ─── Mise à jour du système ───────────────────────────────────────────────────
 
 info "Mise à jour du système..."
-sudo apt-get update -q
-sudo apt-get upgrade -y -q
+sudo apt-get update -q || true
+sudo apt-get upgrade -y -q || true
 
 # ─── Dépendances système ──────────────────────────────────────────────────────
 
@@ -73,12 +73,6 @@ sudo apt-get install -y \
     xdotool \
     love
 
-info "Installation des dépendances Python scientifiques..."
-sudo apt-get install -y \
-    python3-numpy \
-    python3-scipy \
-    python3-sklearn \
-    python3-joblib
 
 # ─── Installation de MG2D ─────────────────────────────────────────────────────
 
@@ -148,16 +142,19 @@ sudo cp "$BORNE_DIR/borne" /usr/share/X11/xkb/symbols/borne
 info "Compilation des jeux Java..."
 bash compilation.sh
 
-# ─── Dépendances Python spécifiques aux jeux ─────────────────────────────────
+# ─── Dépendances Python des jeux (requirements.txt automatique) ──────────────
 
-if [ "$IS_64BIT" = true ]; then
-    info "Installation de librosa pour PianoTile (peut prendre quelques minutes)..."
-    # --break-system-packages est requis sur Debian Bookworm+ (PEP 668)
-    pip3 install librosa --user --break-system-packages \
-        || warn "Échec de l'installation de librosa. PianoTile ne fonctionnera pas."
-else
-    warn "Architecture 32-bit : librosa ne sera pas installé. PianoTile ne fonctionnera pas."
-fi
+info "Installation des dépendances Python des jeux..."
+REQ_COUNT=0
+for req in "$BORNE_DIR"/projet/*/requirements.txt; do
+    [ -f "$req" ] || continue
+    GAME=$(basename "$(dirname "$req")")
+    info "  → $GAME"
+    pip3 install -r "$req" --user --break-system-packages \
+        || warn "  Certaines dépendances de $GAME n'ont pas pu être installées."
+    REQ_COUNT=$((REQ_COUNT + 1))
+done
+[ "$REQ_COUNT" -eq 0 ] && info "Aucun requirements.txt trouvé dans les jeux."
 
 # ─── Vérification de l'installation ──────────────────────────────────────────
 
@@ -269,10 +266,8 @@ echo ""
 echo "Notes :"
 if [ "$IS_64BIT" = false ]; then
     echo "  ⚠  Architecture 32-bit détectée ($ARCH)"
-    echo "     - CursedWare ne fonctionnera pas (bug LÖVE sur 32-bit)"
-    echo "     - PianoTile ne fonctionnera pas (librosa nécessite 64-bit)"
-    echo "     - Les jeux Java fonctionneront normalement"
-    echo "     → Pour résoudre ces problèmes, installez Raspberry Pi OS 64-bit"
+    echo "     - Certains jeux peuvent ne pas fonctionner (LÖVE, librosa...)"
+    echo "     → Pour tous les jeux, utilisez Raspberry Pi OS 64-bit"
 else
     echo "  ✓  Tous les jeux devraient fonctionner correctement"
 fi

@@ -1,29 +1,20 @@
 import java.awt.Font;
-import java.io.IOException;
-import java.nio.file.*;
-import javax.swing.*;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import MG2D.geometrie.Rectangle;
-import MG2D.Clavier;
-import MG2D.audio.*;
 import java.io.File;
-import MG2D.geometrie.Texte;
+import MG2D.geometrie.Rectangle;
+import MG2D.audio.*;
 import MG2D.Couleur;
 
 
 public class BoiteSelection extends Boite{
     Pointeur pointeur;
     Font font;
+    Bruitage sonSelection;
 
     public BoiteSelection(Rectangle rectangle, Pointeur pointeur) {
 	super(rectangle);
 	this.pointeur = pointeur;
-    }
-
-    public boolean selection(ClavierBorneArcade clavier){
-	Bruitage selection = new Bruitage("sound/bip.mp3");
-	font = null;
+	// Charger le son et la font une seule fois (pas à chaque frame)
+	this.sonSelection = new Bruitage("sound/bip.mp3");
 	try{
 	    File in = new File("fonts/PrStart.ttf");
 	    font = font.createFont(Font.TRUETYPE_FONT, in);
@@ -31,6 +22,9 @@ public class BoiteSelection extends Boite{
 	}catch (Exception e) {
 	    System.out.println(e.getMessage());
 	}
+    }
+
+    public boolean selection(ClavierBorneArcade clavier){
 	
 	//Modifier le 07/11/2019 pour améliorer la navigation
 	/*
@@ -45,7 +39,8 @@ public class BoiteSelection extends Boite{
 			Graphique.afficherTexte(pointeur.getValue());
 			Graphique.textesAffiches[pointeur.getValue()]=true;
 		}
-	    selection.lecture();
+	    sonSelection = new Bruitage("sound/bip.mp3");
+	    sonSelection.lecture();
 		if(pointeur.getValue() == Graphique.tableau.length -1){
 			pointeur.setValue(0);
 				for(int i = 0 ; i < Graphique.tableau.length ; i++){
@@ -78,7 +73,8 @@ public class BoiteSelection extends Boite{
 			Graphique.textesAffiches[pointeur.getValue()]=true;
 		}
 	    try{
-			selection.lecture();
+			sonSelection = new Bruitage("sound/bip.mp3");
+			sonSelection.lecture();
 	}catch(Exception e){}
 			if(pointeur.getValue() == 0){
 				pointeur.setValue(Graphique.tableau.length-1);	
