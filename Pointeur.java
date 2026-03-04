@@ -22,22 +22,36 @@ public class Pointeur {
 	this.value = Graphique.tableau.length-1;
     }
 
+    /** Chemin absolu vers le fichier xmodmap de la borne, calculé une fois au lancement. */
+    private static final String XMODMAP_PATH =
+	new File(System.getProperty("user.dir"), ".Xmodmap.borne").getAbsolutePath();
+
+    /**
+     * Retourne un ProcessBuilder qui applique le mapping clavier (xmodmap)
+     * puis exécute la commande donnée, via bash.
+     * Utilisé pour les jeux non-Java qui ne bénéficient pas du ClavierBorneArcade.
+     */
+    private static ProcessBuilder withKeymap(String command) {
+	return new ProcessBuilder("bash", "-c",
+	    "xmodmap \"" + XMODMAP_PATH + "\" 2>/dev/null || true; " + command);
+    }
+
     private ProcessBuilder buildGameProcess(String gameDir, String gameName) {
 	File dir = new File(gameDir);
 
 	// Love2D
 	if (new File(dir, "main.lua").exists()) {
-	    return new ProcessBuilder("love", ".");
+	    return withKeymap("love .");
 	}
 
 	// Python: app/game.py
 	if (new File(dir, "app/game.py").exists()) {
-	    return new ProcessBuilder("python3", "app/game.py");
+	    return withKeymap("python3 app/game.py");
 	}
 
 	// Python: main.py
 	if (new File(dir, "main.py").exists()) {
-	    return new ProcessBuilder("python3", "main.py");
+	    return withKeymap("python3 main.py");
 	}
 
 	// Python: src/ directory (pas de .java à la racine)
@@ -45,7 +59,7 @@ public class Pointeur {
 	if (srcDir.exists() && srcDir.isDirectory()
 		&& !new File(dir, gameName + ".java").exists()
 		&& !new File(dir, "Main.java").exists()) {
-	    return new ProcessBuilder("python3", "./src");
+	    return withKeymap("python3 ./src");
 	}
 
 	// Java : créer highscore si absent
