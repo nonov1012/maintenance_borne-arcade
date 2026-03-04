@@ -536,31 +536,37 @@ public class ClavierBorneArcade implements KeyListener {
 	switch (key.getKeyCode()) {
 
 	case KeyEvent.VK_F:
+	case KeyEvent.VK_1: // borne AZERTY : touche & (bas-gauche J1)
 	    f = false;
 	    fTape = true;
 	    break;
 
 	case KeyEvent.VK_G:
+	case KeyEvent.VK_2: // borne AZERTY : touche é (bas-milieu J1)
 	    g = false;
 	    gTape = true;
 	    break;
 
 	case KeyEvent.VK_H:
+	case KeyEvent.VK_3: // borne AZERTY : touche " (bas-droite J1)
 	    h = false;
 	    hTape = true;
 	    break;
 
 	case KeyEvent.VK_R:
+	case KeyEvent.VK_4: // borne AZERTY : touche ' (haut-gauche J1)
 	    r = false;
 	    rTape = true;
 	    break;
 
 	case KeyEvent.VK_T:
+	case KeyEvent.VK_5: // borne AZERTY : touche ( (haut-milieu J1)
 	    t = false;
 	    tTape = true;
 	    break;
 
 	case KeyEvent.VK_Y:
+	case KeyEvent.VK_6: // borne AZERTY : touche - (haut-droite J1)
 	    y = false;
 	    yTape = true;
 	    break;
@@ -675,26 +681,32 @@ public class ClavierBorneArcade implements KeyListener {
 	switch (key.getKeyCode()) {
 
 	case KeyEvent.VK_F:
+	case KeyEvent.VK_1: // borne AZERTY : touche & (bas-gauche J1)
 	    f = true;
 	    break;
 
 	case KeyEvent.VK_G:
+	case KeyEvent.VK_2: // borne AZERTY : touche é (bas-milieu J1)
 	    g = true;
 	    break;
 
 	case KeyEvent.VK_H:
+	case KeyEvent.VK_3: // borne AZERTY : touche " (bas-droite J1)
 	    h = true;
 	    break;
 
 	case KeyEvent.VK_R:
+	case KeyEvent.VK_4: // borne AZERTY : touche ' (haut-gauche J1)
 	    r = true;
 	    break;
 
 	case KeyEvent.VK_T:
+	case KeyEvent.VK_5: // borne AZERTY : touche ( (haut-milieu J1)
 	    t = true;
 	    break;
 
 	case KeyEvent.VK_Y:
+	case KeyEvent.VK_6: // borne AZERTY : touche - (haut-droite J1)
 	    y = true;
 	    break;
 
