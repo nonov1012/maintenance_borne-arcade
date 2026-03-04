@@ -10,8 +10,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
-ADMIN_DIR = Path(__file__).parent.parent
+ADMIN_DIR   = Path(__file__).parent.parent
 PROJECT_DIR = ADMIN_DIR.parent / "projet"
+DOCS_DIR    = ADMIN_DIR.parent / "docs"
 
 
 @dataclass
@@ -135,11 +136,9 @@ def scan_games(project_dir: Optional[Path] = None) -> List[GameInfo]:
         else:
             lang, sources, ratio = "unknown", [], 0.0
 
-        has_readme = any(
-            (game_dir / n).exists()
-            for n in ("README.md", "README.txt", "readme.md", "README.draft.md")
-        )
-        has_doc = (game_dir / "doc").is_dir() or (game_dir / "docs").is_dir()
+        game_docs  = DOCS_DIR / game_dir.name
+        has_doc    = (game_docs / "api").is_dir()
+        has_readme = (game_docs / "README.md").exists()
 
         requirements: List[str] = []
         req = game_dir / "requirements.txt"

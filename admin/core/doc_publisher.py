@@ -10,47 +10,13 @@ L'IA ne touche jamais au code source.
 """
 from __future__ import annotations
 
-import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from .game_scanner import GameInfo
-
 ADMIN_DIR = Path(__file__).parent.parent
 REPO_ROOT  = ADMIN_DIR.parent
 DOCS_DIR   = REPO_ROOT / "docs"
-
-
-# ---------------------------------------------------------------------------
-# Copie locale
-# ---------------------------------------------------------------------------
-
-def copy_game_doc(game: GameInfo, result: dict) -> bool:
-    """
-    Copie la doc générée dans docs/<jeu>/.
-    Retourne True si quelque chose a été copié.
-    """
-    method = result.get("method")
-    game_docs = DOCS_DIR / game.name
-    game_docs.mkdir(parents=True, exist_ok=True)
-
-    if method in ("javadoc", "pydoc"):
-        src = game.path / "doc"
-        if src.exists() and any(src.iterdir()):
-            dst = game_docs / "api"
-            if dst.exists():
-                shutil.rmtree(dst)
-            shutil.copytree(src, dst)
-            return True
-
-    elif method == "ollama":
-        src = game.path / "README.draft.md"
-        if src.exists():
-            shutil.copy2(src, game_docs / "README.md")
-            return True
-
-    return False
 
 
 # ---------------------------------------------------------------------------

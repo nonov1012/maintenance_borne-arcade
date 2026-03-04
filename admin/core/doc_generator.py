@@ -22,6 +22,7 @@ from .game_scanner import GameInfo
 from .ollama_client import OllamaWrapper, OllamaConnectionError, OllamaResponseError
 
 ADMIN_DIR = Path(__file__).parent.parent
+DOCS_DIR  = ADMIN_DIR.parent / "docs"
 StatusFn = Callable[[str, str, str], None]  # (status, message, output_file)
 
 # Patterns javadoc indiquant des commentaires manquants (exit 0 mais doc incomplète)
@@ -70,16 +71,21 @@ def generate_doc_for_game(game: GameInfo, status_fn: Optional[StatusFn] = None) 
 # ---------------------------------------------------------------------------
 
 def _java_strategy(game, reports_dir, date_str, config, status) -> Dict:
-    """Tente javadoc. Si ça échoue → Ollama avec les erreurs comme contexte."""
+    """Tente javadoc. Si commentaires manquants → Ollama. Si Ollama échoue → javadoc quand même."""
     result = _javadoc(game, reports_dir, date_str, status)
     if result["success"]:
         return result
-    # Javadoc a échoué : on transmet les erreurs à Ollama
+    # Javadoc incomplète : on essaie Ollama pour un README
     javadoc_errors = result.get("error", "")
-    return _ollama_readme(
+    ollama = _ollama_readme(
         game, reports_dir, date_str, config, status,
         extra_context=f"Erreurs javadoc (ce qui manque dans le code) :\n{javadoc_errors}",
     )
+    if ollama["success"]:
+        return ollama
+    # Ollama indisponible : on publie quand même la javadoc partielle
+    status("done", "Javadoc publiée (Ollama indisponible)", result.get("report", ""))
+    return {"success": True, "method": "javadoc", "output": result.get("report", "")}
 
 
 def _python_strategy(game, reports_dir, date_str, config, status) -> Dict:
@@ -109,8 +115,8 @@ def _has_any_docstring(game: GameInfo) -> bool:
 def _javadoc(game: GameInfo, reports_dir: Path, date_str: str, status: StatusFn) -> Dict:
     status("running", "Génération Javadoc…")
 
-    out_dir = game.path / "doc"
-    out_dir.mkdir(exist_ok=True)
+    out_dir = DOCS_DIR / game.name / "api"
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     java_files = [str(f) for f in game.source_files]
     cmd = ["javadoc", "-cp", ".:../../..", "-d", str(out_dir), "-quiet"] + java_files
@@ -145,8 +151,8 @@ def _javadoc(game: GameInfo, reports_dir: Path, date_str: str, status: StatusFn)
 def _pydoc(game: GameInfo, reports_dir: Path, date_str: str, status: StatusFn) -> Dict:
     status("running", "Génération pydoc…")
 
-    out_dir = game.path / "doc"
-    out_dir.mkdir(exist_ok=True)
+    out_dir = DOCS_DIR / game.name / "api"
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     generated = []
     errors = []
@@ -222,18 +228,21 @@ def _ollama_readme(
         status("running", f"Ollama ({model}) en cours…")
         result = client.generate_text(model=model, prompt=prompt)
 
-        draft = game.path / "README.draft.md"
-        draft.write_text(
+        game_docs = DOCS_DIR / game.name
+        game_docs.mkdir(parents=True, exist_ok=True)
+        readme = game_docs / "README.md"
+        content = (
             f"<!-- Généré automatiquement par Ollama ({model}) le {date_str} -->\n"
             f"<!-- À relire et valider avant usage -->\n\n"
             + result.response
         )
+        readme.write_text(content)
 
         report = reports_dir / f"{date_str}_ollama_{game.name}.md"
-        report.write_text(draft.read_text())
+        report.write_text(content)
 
-        status("done", "README.draft.md généré par Ollama", str(draft))
-        return {"success": True, "method": "ollama", "output": str(draft)}
+        status("done", "README.md généré par Ollama", str(readme))
+        return {"success": True, "method": "ollama", "output": str(readme)}
 
     except (OllamaConnectionError, OllamaResponseError) as e:
         status("error", f"Erreur Ollama : {e}")

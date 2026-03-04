@@ -60,7 +60,7 @@ def task_doc(game_name: str):
     try:
         from core.game_scanner import scan_games
         from core.doc_generator import generate_doc_for_game
-        from core.doc_publisher import copy_game_doc, regenerate_index, git_push_docs
+        from core.doc_publisher import regenerate_index, git_push_docs
 
         games = {g.name: g for g in scan_games()}
         if game_name not in games:
@@ -77,17 +77,16 @@ def task_doc(game_name: str):
 
             if _load_config().get("github_pages"):
                 write_status(task_id, "running", "Publication GitHub Pages…", {"game": game_name})
-                if copy_game_doc(games[game_name], result):
-                    regenerate_index()
-                    pub = git_push_docs(game_name)
-                    if pub.get("success"):
-                        write_status(task_id, "done",
-                                     f"Publié sur GitHub Pages ({method})",
-                                     {"game": game_name, "output": result.get("output", "")})
-                    else:
-                        write_status(task_id, "done",
-                                     f"Doc OK — Push échoué : {pub.get('error', '')[:80]}",
-                                     {"game": game_name})
+                regenerate_index()
+                pub = git_push_docs(game_name)
+                if pub.get("success"):
+                    write_status(task_id, "done",
+                                 f"Publié sur GitHub Pages ({method})",
+                                 {"game": game_name, "output": result.get("output", "")})
+                else:
+                    write_status(task_id, "done",
+                                 f"Doc OK — Push échoué : {pub.get('error', '')[:80]}",
+                                 {"game": game_name})
         else:
             write_status(task_id, "error",
                          result.get("error", "Erreur inconnue")[:200],
@@ -103,11 +102,10 @@ def task_doc_all():
     try:
         from core.game_scanner import scan_games
         from core.doc_generator import generate_doc_for_game
-        from core.doc_publisher import copy_game_doc, regenerate_index, git_push_docs
+        from core.doc_publisher import regenerate_index, git_push_docs
 
         games = scan_games()
         results = []
-        published = []
         github_pages = _load_config().get("github_pages", False)
 
         for i, game in enumerate(games):
@@ -115,18 +113,14 @@ def task_doc_all():
             res = generate_doc_for_game(game)
             results.append({"game": game.name, "success": res.get("success"), "method": res.get("method")})
 
-            if res.get("success") and github_pages:
-                if copy_game_doc(game, res):
-                    published.append(game.name)
-
         done_count = sum(1 for r in results if r["success"])
 
-        if github_pages and published:
+        if github_pages and done_count > 0:
             write_status(task_id, "running",
-                         f"Publication de {len(published)} jeux sur GitHub Pages…")
+                         f"Publication de {done_count} jeux sur GitHub Pages…")
             regenerate_index()
             pub = git_push_docs("all")
-            pub_msg = (f", {len(published)} publiés" if pub.get("success")
+            pub_msg = (f", {done_count} publiés" if pub.get("success")
                        else f", push échoué : {pub.get('error', '')[:60]}")
         else:
             pub_msg = ""

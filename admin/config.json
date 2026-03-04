@@ -1,12 +1,17 @@
 {
-  "shortcut": ["UP", "UP", "DOWN", "Y"],
+  "shortcut": [
+    "UP",
+    "UP",
+    "DOWN",
+    "Y"
+  ],
   "ollama_url": "http://10.22.28.190:11434",
   "ollama_model": "qwen3:8b",
   "comment_threshold_java": 0.15,
-  "comment_threshold_python": 0.10,
+  "comment_threshold_python": 0.1,
   "comment_threshold_lua": 0.05,
   "project_dir": "../projet",
   "reports_dir": "reports",
   "git_auto_snapshot": true,
-  "github_pages": false
+  "github_pages": true
 }
