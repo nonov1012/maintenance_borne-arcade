@@ -22,18 +22,27 @@ public class Pointeur {
 	this.value = Graphique.tableau.length-1;
     }
 
-    /** Chemin absolu vers le fichier xmodmap de la borne, calculé une fois au lancement. */
-    private static final String XMODMAP_PATH =
-	new File(System.getProperty("user.dir"), ".Xmodmap.borne").getAbsolutePath();
-
     /**
-     * Retourne un ProcessBuilder qui applique le mapping clavier (xmodmap)
-     * puis exécute la commande donnée, via bash.
-     * Utilisé pour les jeux non-Java qui ne bénéficient pas du ClavierBorneArcade.
+     * Retourne un ProcessBuilder qui applique le mapping clavier borne puis exécute la commande.
+     * Utilisé pour les jeux non-Java (Python, Love2D) qui ne bénéficient pas du ClavierBorneArcade.
+     *
+     * NOTE: xmodmap ne fonctionne PAS pour pygame/SDL2 car SDL2 lit le keymap via l'extension
+     * XKB du serveur X, pas l'ancien protocole X11 core que xmodmap modifie.
+     * setxkbmap est la seule solution car il modifie directement le XKB state.
      */
     private static ProcessBuilder withKeymap(String command) {
-	return new ProcessBuilder("bash", "-c",
-	    "xmodmap \"" + XMODMAP_PATH + "\" 2>/dev/null || true; " + command);
+	// Copier le fichier borne dans /usr/share si nécessaire, puis appliquer setxkbmap
+	String borneFile = new File(System.getProperty("user.dir"), "borne").getAbsolutePath();
+	String setupKeymap =
+	    "[ -f /usr/share/X11/xkb/symbols/borne ] || " +
+	    "sudo cp \"" + borneFile + "\" /usr/share/X11/xkb/symbols/borne 2>/dev/null || true; " +
+	    "setxkbmap borne 2>/dev/null || true";
+	// Forcer la sortie audio jack (numid=3 val=1 sur RPi: 0=auto, 1=jack, 2=HDMI)
+	String setupAudio = "amixer cset numid=3 1 2>/dev/null || true";
+	ProcessBuilder pb = new ProcessBuilder("bash", "-c", setupKeymap + "; " + setupAudio + "; " + command);
+	// SDL_AUDIODRIVER=alsa force pygame à utiliser ALSA plutôt que PulseAudio/auto
+	pb.environment().put("SDL_AUDIODRIVER", "alsa");
+	return pb;
     }
 
     private ProcessBuilder buildGameProcess(String gameDir, String gameName) {
@@ -73,20 +82,58 @@ public class Pointeur {
 	    mainClass);
     }
 
+    /** Récupère l'ID de la fenêtre active via xdotool, ou "" si indisponible. */
+    private String getFocusedWindowId() {
+	try {
+	    Process p = new ProcessBuilder("xdotool", "getactivewindow").start();
+	    String id = new String(p.getInputStream().readAllBytes()).trim();
+	    p.waitFor();
+	    return id;
+	} catch (Exception e) {
+	    return "";
+	}
+    }
+
+    /** Donne le focus à une fenêtre via son ID xdotool. */
+    private void focusWindow(String windowId) {
+	if (windowId == null || windowId.isEmpty()) return;
+	try {
+	    new ProcessBuilder("xdotool", "windowfocus", "--sync", windowId).start().waitFor();
+	    // Clic pour s'assurer que les événements clavier arrivent bien
+	    new ProcessBuilder("xdotool", "windowactivate", "--sync", windowId).start().waitFor();
+	} catch (Exception ignored) {}
+    }
+
+    /** Clique au centre de l'écran pour donner le focus à la fenêtre au premier plan. */
+    private void clickCenter() {
+	try {
+	    new ProcessBuilder("xdotool", "mousemove", "640", "512", "click", "1").start();
+	} catch (Exception ignored) {}
+    }
+
     public void lancerJeu(ClavierBorneArcade clavier){
 	if(clavier.getBoutonJ1ATape()){
 	    try {
 		Graphique.stopMusiqueFond();
 
-		// Déplacer la souris hors de l'écran de jeu (ignoré si xdotool absent)
-		try { new ProcessBuilder("xdotool", "mousemove", "1280", "1024").start(); } catch (IOException ignored) {}
+		// Mémoriser la fenêtre du menu pour y revenir après le jeu
+		String menuWindowId = getFocusedWindowId();
 
 		String gameDir = Graphique.tableau[getValue()].getChemin();
 		String gameName = Graphique.tableau[getValue()].getNom();
 		ProcessBuilder pb = buildGameProcess(gameDir, gameName);
 		pb.directory(new File(gameDir));
 		Process process = pb.start();
+
+		// Attendre que la fenêtre du jeu s'ouvre puis lui donner le focus
+		Thread.sleep(800);
+		clickCenter();
+
 		process.waitFor();	// attendre la fin du jeu pour reprendre le contrôle sur le menu
+
+		// Redonner le focus au menu
+		focusWindow(menuWindowId);
+
 		Graphique.lectureMusiqueFond();
 	    } catch (IOException e) {
 		e.printStackTrace();
