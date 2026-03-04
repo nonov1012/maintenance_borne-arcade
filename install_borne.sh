@@ -239,6 +239,7 @@ fi
 
 # ─── Start auto ───────────────────────────────────────────────────────────────
 
+info "lancement automatique de la borne au démarrage"
 mv borne.desktop ~/.config/autostart/
 
 # ─── Résumé ───────────────────────────────────────────────────────────────────
