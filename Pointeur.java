@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.io.File;
 
 import MG2D.geometrie.Texture;
 import MG2D.Couleur;
@@ -21,23 +22,63 @@ public class Pointeur {
 	this.value = Graphique.tableau.length-1;
     }
 
+    private ProcessBuilder buildGameProcess(String gameDir, String gameName) {
+	File dir = new File(gameDir);
+
+	// Love2D
+	if (new File(dir, "main.lua").exists()) {
+	    return new ProcessBuilder("love", ".");
+	}
+
+	// Python: app/game.py
+	if (new File(dir, "app/game.py").exists()) {
+	    return new ProcessBuilder("python3", "app/game.py");
+	}
+
+	// Python: main.py
+	if (new File(dir, "main.py").exists()) {
+	    return new ProcessBuilder("python3", "main.py");
+	}
+
+	// Python: src/ directory (pas de .java à la racine)
+	File srcDir = new File(dir, "src");
+	if (srcDir.exists() && srcDir.isDirectory()
+		&& !new File(dir, gameName + ".java").exists()
+		&& !new File(dir, "Main.java").exists()) {
+	    return new ProcessBuilder("python3", "./src");
+	}
+
+	// Java : créer highscore si absent
+	try { new File(dir, "highscore").createNewFile(); } catch (IOException e) {}
+
+	// Java : classe principale = gameName si le .java existe, sinon Main
+	String mainClass = new File(dir, gameName + ".java").exists() ? gameName : "Main";
+	return new ProcessBuilder("java",
+	    "-Dprism.forceGPU=true", "-Dsun.java2d.opengl=true",
+	    "-cp", ".:..:../..",
+	    mainClass);
+    }
+
     public void lancerJeu(ClavierBorneArcade clavier){
 	if(clavier.getBoutonJ1ATape()){
-
-	    //System.out.println(Graphique.tableau[getValue()].getChemin());
 	    try {
 		Graphique.stopMusiqueFond();
-		Process process = new ProcessBuilder("./" + Graphique.tableau[getValue()].getNom() + ".sh").start();
-		process.waitFor();		//ajouté afin d'attendre la fin de l'exécution du jeu pour reprendre le contrôle sur le menu
+
+		// Déplacer la souris hors de l'écran de jeu (ignoré si xdotool absent)
+		try { new ProcessBuilder("xdotool", "mousemove", "1280", "1024").start(); } catch (IOException ignored) {}
+
+		String gameDir = Graphique.tableau[getValue()].getChemin();
+		String gameName = Graphique.tableau[getValue()].getNom();
+		ProcessBuilder pb = buildGameProcess(gameDir, gameName);
+		pb.directory(new File(gameDir));
+		Process process = pb.start();
+		process.waitFor();	// attendre la fin du jeu pour reprendre le contrôle sur le menu
 		Graphique.lectureMusiqueFond();
 	    } catch (IOException e) {
-		// TODO Auto-generated catch block
 		e.printStackTrace();
-	    } catch(Exception e){	//on catche toutes les exceptions, nécessaire pour le waitFor()
-			e.printStackTrace();
-		}
-
-	    //System.out.println("le process sur "+Graphique.tableau[getValue()].getChemin()+" est bien lancé");
+	    } catch(Exception e){	// on catche toutes les exceptions, nécessaire pour le waitFor()
+		e.printStackTrace();
+	    }
 	}
     }
 

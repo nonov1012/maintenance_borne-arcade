@@ -140,6 +140,11 @@ cd "$BORNE_DIR"
 info "Configuration des permissions des scripts..."
 chmod +x ./*.sh
 
+# ─── Installation du layout clavier XKB ──────────────────────────────────────
+
+info "Installation du layout clavier XKB..."
+sudo cp "$BORNE_DIR/borne" /usr/share/X11/xkb/symbols/borne
+
 info "Compilation des jeux Java..."
 bash compilation.sh
 
@@ -243,6 +248,11 @@ fi
 
 info "lancement automatique de la borne au démarrage"
 mv borne.desktop ~/.config/autostart/
+
+# ─── Remapping des touches ───────────────────────────────────────────────────────────────
+
+info "Configuration des bouton de la borne"
+sudo cp ~/borne_arcade/borne /usr/share/X11/xkb/symbols/borne
 
 # ─── Résumé ───────────────────────────────────────────────────────────────────
 
