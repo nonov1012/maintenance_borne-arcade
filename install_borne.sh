@@ -88,13 +88,15 @@ MG2D_TMP=$(mktemp -d)
 info "Installation/mise à jour de MG2D dans $MG2D_DIR..."
 if [ -d "$MG2D_DIR" ]; then
     warn "MG2D existe déjà"
+else 
+    # On clone toujours dans un dossier temporaire, puis on déplace le
+    # sous-dossier MG2D/ (contenu du repo, pas le repo lui-même)
+    git clone https://github.com/synave/MG2D.git "$MG2D_TMP"
+    rm -rf "$MG2D_DIR"
+    mv "$MG2D_TMP/MG2D/" "$MG2D_DIR"
+    rm -rf "$MG2D_TMP"
 fi
-# On clone toujours dans un dossier temporaire, puis on déplace le
-# sous-dossier MG2D/ (contenu du repo, pas le repo lui-même)
-git clone https://github.com/synave/MG2D.git "$MG2D_TMP"
-rm -rf "$MG2D_DIR"
-mv "$MG2D_TMP/MG2D/" "$MG2D_DIR"
-rm -rf "$MG2D_TMP"
+
 
 # ─── Configuration du CLASSPATH ──────────────────────────────────────────────
 
@@ -118,8 +120,8 @@ export CLASSPATH="${CLASSPATH:+$CLASSPATH:}.:$HOME/MG2D"
 # ─── Compilation de MG2D ─────────────────────────────────────────────────────
 
 info "Compilation de MG2D..."
-cd "$MG2D_DIR"
-javac *.java
+cd $HOME
+javac ./MG2D/*.java
 
 # ─── Installation de la borne d'arcade ───────────────────────────────────────
 
