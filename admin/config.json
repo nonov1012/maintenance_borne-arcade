@@ -13,5 +13,8 @@
   "project_dir": "../projet",
   "reports_dir": "reports",
   "git_auto_snapshot": true,
-  "github_pages": true
+  "github_pages": true,
+  "repos": [
+    {"name": "maintenance-borne-arcade", "path": ".."}
+  ]
 }
