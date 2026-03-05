@@ -11,6 +11,8 @@ local TIMER_MAX     = 99
 
 -- ── État global ───────────────────────────────────────────────────────────────
 local scene         -- "countdown" | "fight" | "roundend" | "matchend"
+local paused        -- bool : pause overlay actif
+local pausedBy      -- 1 | 2 : qui a mis la pause
 local fighters
 local timer
 local roundsWon     -- { [1]=0, [2]=0 }
@@ -65,6 +67,8 @@ function love.load()
     roundsWon    = { 0, 0 }
     currentRound = 1
     matchWinner  = nil
+    paused       = false
+    pausedBy     = nil
     startRound()
 end
 
@@ -75,13 +79,14 @@ end
 
 local function checkHit(atk, def)
     if atk.hitDone then return end
+    if def:isInvincible() then return end
     local ax, ay, aw, ah = atk:atkRect()
     if not ax then return end
     local dx, dy, dw, dh = def:rect()
     if rectsOverlap(ax, ay, aw, ah, dx, dy, dw, dh) then
         atk.hitDone = true
         local a = atk.atk
-        def:receiveHit(a.dmg, atk.facing, a.kb, def.isBlocking)
+        def:receiveHit(a.dmg, atk.facing, a.kb)
     end
 end
 
@@ -144,6 +149,7 @@ end
 
 -- ── love.update ───────────────────────────────────────────────────────────────
 function love.update(dt)
+    if paused then return end
     dt = math.min(dt, 0.05)
     sceneTimer = sceneTimer - dt
 
@@ -200,17 +206,54 @@ function love.update(dt)
 end
 
 -- ── love.keypressed ───────────────────────────────────────────────────────────
-function love.keypressed(key)
-    if key == "escape" then love.event.quit() end
+-- Touches qui appartiennent à chaque joueur (pour reprendre la pause)
+-- Double mapping P1 : touches brutes AZERTY (1-5) + keysyms après XKB (f,g,h,r,t)
+local P1_KEYS = { left=true, right=true, up=true, down=true,
+                  f=true, g=true, h=true, r=true, t=true,
+                  ["1"]=true, ["2"]=true, ["3"]=true, ["4"]=true, ["5"]=true }
+local P2_KEYS = { k=true, m=true, o=true, l=true,
+                  q=true, s=true, d=true, a=true, z=true }
 
+function love.keypressed(key)
+    -- Quitter depuis l'écran de fin de match
     if scene == "matchend" then
-        -- N'importe quelle touche joueur relance
-        if key == "f" or key == "q" or key == "return" then
+        if key == "y" or key == "6" or key == "e" or key == "escape" then
+            love.event.quit()
+        elseif key == "f" or key == "q" or key == "return" then
             roundsWon    = { 0, 0 }
             currentRound = 1
             matchWinner  = nil
+            paused       = false
+            pausedBy     = nil
             startRound()
         end
+        return
+    end
+
+    -- Gestion pause active
+    if paused then
+        if key == "y" or key == "6" or key == "e" or key == "escape" then
+            love.event.quit()
+        elseif pausedBy == 1 and P1_KEYS[key] then
+            paused   = false
+            pausedBy = nil
+        elseif pausedBy == 2 and P2_KEYS[key] then
+            paused   = false
+            pausedBy = nil
+        end
+        return
+    end
+
+    -- Pause J1 : "y" (après XKB) ou "6" (touche brute AZERTY)
+    if key == "y" or key == "6" then
+        paused   = true
+        pausedBy = 1
+        return
+    end
+    -- Pause J2 : "e" directement (pas de remapping nécessaire)
+    if key == "e" then
+        paused   = true
+        pausedBy = 2
         return
     end
 
@@ -374,9 +417,43 @@ local function drawMatchEnd()
         printCenter("WINS THE MATCH!", H * 0.44, fMed, 1, 0.88, 0.1)
     end
 
-    -- Clignotement "appuyez pour rejouer"
+    -- Clignotement des options
     if math.floor(love.timer.getTime() * 2) % 2 == 0 then
-        printCenter("PRESS F (P1) OR Q (P2) TO PLAY AGAIN", H * 0.65, fSml, 0.65, 0.65, 0.65)
+        printCenter("F / Q  ->  REJOUER       Y / E  ->  QUITTER", H * 0.65, fSml, 0.65, 0.65, 0.65)
+    end
+end
+
+local function drawPause()
+    -- Fond semi-transparent
+    love.graphics.setColor(0, 0, 0, 0.65)
+    love.graphics.rectangle("fill", 0, 0, W, H)
+
+    -- Cadre central
+    local bw, bh = W * 0.42, H * 0.38
+    local bx, by = W / 2 - bw / 2, H / 2 - bh / 2
+    love.graphics.setColor(0.06, 0.06, 0.22)
+    love.graphics.rectangle("fill", bx, by, bw, bh, 12, 12)
+    love.graphics.setColor(0.3, 0.5, 1, 0.7)
+    love.graphics.rectangle("line", bx, by, bw, bh, 12, 12)
+
+    -- Titre
+    printCenter("PAUSE", H * 0.36, fBig, 0.9, 0.9, 1)
+
+    -- Options
+    local blink   = math.floor(love.timer.getTime() * 2) % 2 == 0
+    local pname   = pausedBy == 1 and "P1" or "P2"
+    local pcol    = pausedBy == 1 and {0.25,0.55,1.0} or {1.0,0.30,0.22}
+
+    love.graphics.setFont(fSml)
+    -- Qui peut reprendre
+    local resumeMsg = "touche " .. pname .. "  ->  REPRENDRE"
+    love.graphics.setColor(pcol[1], pcol[2], pcol[3])
+    love.graphics.print(resumeMsg, centerX(resumeMsg, fSml), H * 0.52)
+
+    if blink then
+        printCenter("Y  /  E  ->  QUITTER", H * 0.63, fSml, 1, 0.42, 0.42)
+    else
+        printCenter("Y  /  E  ->  QUITTER", H * 0.63, fSml, 0.75, 0.28, 0.28)
     end
 end
 
@@ -394,6 +471,8 @@ function love.draw()
     elseif scene == "roundend"  then drawRoundEnd()
     elseif scene == "matchend"  then drawMatchEnd()
     end
+
+    if paused then drawPause() end
 
     love.graphics.setColor(1, 1, 1)
 end
