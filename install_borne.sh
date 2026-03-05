@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script d'installation automatique pour la borne d'arcade
-# Usage: curl -sSL https://raw.githubusercontent.com/nonov1012/maintenance_borne-arcade/main/install_borne.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/nonov1012/maintenance_borne-arcade/main/install_borne.sh | tr -d '\r' | bash
 
 set -euo pipefail  # Arrêter en cas d'erreur, variable non définie, ou erreur dans un pipe
 
@@ -260,7 +260,8 @@ fi
 # ─── Start auto ───────────────────────────────────────────────────────────────
 
 info "lancement automatique de la borne au démarrage"
-mv borne.desktop ~/.config/autostart/
+mkdir -p ~/.config/autostart
+mv borne.desktop ~/.config/autostart/borne
 
 # ─── Remapping des touches ───────────────────────────────────────────────────────────────
 
