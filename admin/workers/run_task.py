@@ -230,7 +230,8 @@ def task_dep_apply(package: str, version: str, current_version: str = "?"):
         # 1. pip install
         _status("running", f"Installation de {package}=={version}…")
         pip = _sp.run(
-            [sys.executable, "-m", "pip", "install", f"{package}=={version}"],
+            [sys.executable, "-m", "pip", "install", f"{package}=={version}",
+             "--break-system-packages"],
             capture_output=True, text=True,
         )
         if pip.returncode != 0:
