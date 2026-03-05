@@ -210,12 +210,11 @@ def task_dep_apply(package: str, version: str, current_version: str = "?"):
     """
     Met à jour un package pip avec test de compatibilité et rollback si nécessaire.
     Flux :
-      1. Snapshot git
-      2. pip install package==version
-      3. Test import du package
-      4. py_compile tous les jeux Python
-      5a. OK  → patch requirements.txt → status "done"
-      5b. KO  → analyse Ollama → rapport dans reports/ → rollback → status "incompatible"
+      1. pip install package==version
+      2. Test import du package
+      3. py_compile tous les jeux Python
+      4a. OK  → patch requirements.txt → status "done"
+      4b. KO  → analyse Ollama → rapport dans reports/ → pip rollback → status "incompatible"
     """
     task_id = f"dep_apply_{package}"
     extra_base = {"package": package, "from_version": current_version, "to_version": version}
@@ -223,19 +222,12 @@ def task_dep_apply(package: str, version: str, current_version: str = "?"):
     def _status(st, msg):
         write_status(task_id, st, msg, extra_base)
 
-    _status("running", "Snapshot git…")
     try:
         import subprocess as _sp
-        from core.update_checker import git_snapshot, git_rollback, _patch_requirements, PackageUpdate
+        from core.update_checker import _patch_requirements, PackageUpdate
         from core.compat_tester import test_all_games, build_error_report, test_package_import
 
-        # 1. Snapshot
-        snap_ok, snap_msg = git_snapshot()
-        if not snap_ok:
-            _status("error", f"Snapshot git échoué : {snap_msg[:200]}")
-            return
-
-        # 2. pip install
+        # 1. pip install
         _status("running", f"Installation de {package}=={version}…")
         pip = _sp.run(
             [sys.executable, "-m", "pip", "install", f"{package}=={version}"],
@@ -274,7 +266,7 @@ def task_dep_apply(package: str, version: str, current_version: str = "?"):
 
 def _rollback_and_report(task_id: str, package: str, old_v: str, new_v: str,
                           results, report_text: str):
-    """Analyse Ollama, écrit le rapport, rollback git, met à jour le statut."""
+    """Analyse Ollama, écrit le rapport, rollback pip, met à jour le statut."""
     cfg      = _load_config()
     extra    = {"package": package, "from_version": old_v, "to_version": new_v}
     rep_dir  = ADMIN_DIR / "reports"
@@ -312,22 +304,17 @@ def _rollback_and_report(task_id: str, package: str, old_v: str, new_v: str,
     report_file = rep_dir / f"dep_apply_{package}_{ts}.txt"
     report_file.write_text(report_text + ollama_section, encoding="utf-8")
 
-    # Rollback pip : réinstalle l'ANCIENNE version du package
-    # (git ne gère pas les packages installés sur le système)
-    write_status(task_id, "running", f"Rollback pip : reinstallation de {package}=={old_v}…", extra)
+    # Rollback pip : réinstalle l'ANCIENNE version
+    write_status(task_id, "running", f"Rollback : réinstallation de {package}=={old_v}…", extra)
     import subprocess as _sp
     if old_v and old_v != "?":
         _sp.run(
             [sys.executable, "-m", "pip", "install", f"{package}=={old_v}"],
             capture_output=True, text=True,
         )
-    # Rollback git : reverte les fichiers du dépôt (requirements.txt, etc.)
-    # Note : git ne peut PAS annuler les paquets apt/système — uniquement les fichiers trackés.
-    write_status(task_id, "running", "Rollback git (fichiers du depot)…", extra)
-    git_rollback()
 
     write_status(task_id, "incompatible",
-                 "Mise a jour incompatible — rollback pip + git effectue. Voir rapport.",
+                 "Mise à jour incompatible — rollback effectué. Voir rapport.",
                  {**extra, "report_file": str(report_file)})
 
 
