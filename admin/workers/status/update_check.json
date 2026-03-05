@@ -1,0 +1,30 @@
+{
+  "task_id": "update_check",
+  "status": "done",
+  "message": "3 mise(s) \u00e0 jour disponible(s) sur 3 packages",
+  "pid": 520323,
+  "updated": "2026-03-05T21:59:20.246807",
+  "updates": [
+    {
+      "game": "PianoTile",
+      "package": "pygame",
+      "current": "2.0.0",
+      "latest": "2.6.1",
+      "has_update": true
+    },
+    {
+      "game": "PianoTile",
+      "package": "librosa",
+      "current": "0.10.0",
+      "latest": "0.11.0",
+      "has_update": true
+    },
+    {
+      "game": "TronGame",
+      "package": "numpy",
+      "current": "1.24.0",
+      "latest": "2.4.2",
+      "has_update": true
+    }
+  ]
+}

@@ -62,13 +62,15 @@ _GIT_MAX_VIS = 4    # max lignes git visibles
 class UpdatesTab:
 
     def __init__(self, screen: pygame.Surface, fonts,
-                 content_y: int, content_h: int, admin_dir: Path):
+                 content_y: int, content_h: int, admin_dir: Path,
+                 key_imgs: dict | None = None):
         self.screen    = screen
         self.f_big, self.f_med, self.f_small = fonts
         self.cy        = content_y
         self.ch        = content_h
         self.admin_dir = admin_dir
         self.W         = screen.get_width()
+        self._key_imgs = key_imgs or {}
 
         # -- Geometrie verticale ----------------------------------------
         self._git_sec_y  = self.cy
@@ -345,8 +347,10 @@ class UpdatesTab:
         # Bouton
         if behind > 0 and not error and pull_st not in ("running",):
             btn_clr = _ACCENT if sel else _MUTED
-            self.screen.blit(self.f_small.render("[G] PULL", True, btn_clr),
-                             (790, y + 14))
+            bx = 790
+            bx += self._blit_key("g", bx, y, _GIT_ROW_H) + 6
+            self.screen.blit(self.f_small.render("PULL", True, btn_clr),
+                             (bx, y + (_GIT_ROW_H - self.f_small.get_height()) // 2))
 
     # -- Separateur ---------------------------------------------------- #
 
@@ -450,9 +454,11 @@ class UpdatesTab:
         # Action
         if has_upd and apply_s not in ("running", "done"):
             btn_clr = _ACCENT if sel else _MUTED
+            bx = 930
+            bx += self._blit_key("g", bx, y, _DEP_ROW_H) + 6
             self.screen.blit(
-                self.f_small.render("[G] METTRE A JOUR", True, btn_clr),
-                (930, y + 12),
+                self.f_small.render("METTRE A JOUR", True, btn_clr),
+                (bx, y + (_DEP_ROW_H - self.f_small.get_height()) // 2),
             )
         elif apply_s == "incompatible":
             self.screen.blit(
@@ -473,18 +479,29 @@ class UpdatesTab:
 
     # -- Barre d'aide -------------------------------------------------- #
 
+    def _blit_key(self, key: str, x: int, y: int, cy: int = _HINTS_H) -> int:
+        """Blitte l'image du bouton (ou texte de repli). Retourne la largeur."""
+        img = self._key_imgs.get(key.lower())
+        if img:
+            ih = img.get_height()
+            self.screen.blit(img, (x, y + (cy - ih) // 2))
+            return img.get_width()
+        surf = self.f_small.render(f"[{key.upper()}]", True, _ACCENT)
+        self.screen.blit(surf, (x, y + (cy - self.f_small.get_height()) // 2))
+        return surf.get_width()
+
     def _draw_hints(self):
         y = self._hints_y
         pygame.draw.line(self.screen, _BORDER, (20, y), (self.W - 20, y), 1)
         hints = [
-            ("[F]", "Changer section"),
-            ("[G]", "Appliquer action"),
-            ("[T]", "Verifier tout"),
-            ("[R]", "Rafraichir"),
+            ("f", "Changer section"),
+            ("g", "Appliquer action"),
+            ("t", "Verifier tout"),
+            ("r", "Rafraichir"),
         ]
         x = 30
         for k, d in hints:
-            ks = self.f_small.render(k, True, _ACCENT)
+            x += self._blit_key(k, x, y) + 6
             ds = self.f_small.render(d, True, _MUTED)
-            self.screen.blit(ks, (x, y + 14)); x += ks.get_width() + 6
-            self.screen.blit(ds, (x, y + 14)); x += ds.get_width() + 30
+            self.screen.blit(ds, (x, y + (_HINTS_H - self.f_small.get_height()) // 2))
+            x += ds.get_width() + 30

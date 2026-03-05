@@ -41,13 +41,15 @@ _LANG_CLR  = {"java": (255, 160, 0), "python": (70, 130, 255),
 class GamesTab:
     ROW_H = 62
 
-    def __init__(self, screen: pygame.Surface, fonts, content_y: int, content_h: int, admin_dir: Path):
+    def __init__(self, screen: pygame.Surface, fonts, content_y: int, content_h: int,
+                 admin_dir: Path, key_imgs: dict | None = None):
         self.screen    = screen
         self.f_big, self.f_med, self.f_small = fonts
         self.cy        = content_y
         self.ch        = content_h
         self.admin_dir = admin_dir
         self.W         = screen.get_width()
+        self._key_imgs = key_imgs or {}
 
         self.games: list  = []
         self.selected: int = 0
@@ -170,12 +172,22 @@ class GamesTab:
             self.screen.blit(self.f_small.render(msg[:50], True, mc), (620, y + 22))
 
     def _draw_hints(self):
-        y = self.cy + self.ch - 40
+        row_h = 40
+        y = self.cy + self.ch - row_h
         pygame.draw.line(self.screen, _BORDER, (20, y), (self.W - 20, y), 1)
-        hints = [("G", "Générer doc sélectionné"), ("T", "Générer tout"), ("R", "Rafraîchir statuts")]
+        hints = [("g", "Générer doc sélectionné"), ("t", "Générer tout"), ("r", "Rafraîchir statuts")]
         x = 30
+        fh = self.f_small.get_height()
         for k, d in hints:
-            ks = self.f_small.render(f"[{k}]", True, _ACCENT)
+            img = self._key_imgs.get(k)
+            if img:
+                ih = img.get_height()
+                self.screen.blit(img, (x, y + (row_h - ih) // 2))
+                x += img.get_width() + 6
+            else:
+                ks = self.f_small.render(f"[{k.upper()}]", True, _ACCENT)
+                self.screen.blit(ks, (x, y + (row_h - fh) // 2))
+                x += ks.get_width() + 4
             ds = self.f_small.render(d, True, _MUTED)
-            self.screen.blit(ks, (x, y + 12)); x += ks.get_width() + 4
-            self.screen.blit(ds, (x, y + 12)); x += ds.get_width() + 28
+            self.screen.blit(ds, (x, y + (row_h - fh) // 2))
+            x += ds.get_width() + 28

@@ -137,9 +137,9 @@ def main():
     key_imgs = load_key_images()
 
     tabs = [
-        GamesTab(screen,   fonts, CONTENT_Y, CONTENT_H, ADMIN_DIR),
-        UpdatesTab(screen, fonts, CONTENT_Y, CONTENT_H, ADMIN_DIR),
-        ReportsTab(screen, fonts, CONTENT_Y, CONTENT_H, ADMIN_DIR),
+        GamesTab(screen,   fonts, CONTENT_Y, CONTENT_H, ADMIN_DIR, key_imgs),
+        UpdatesTab(screen, fonts, CONTENT_Y, CONTENT_H, ADMIN_DIR, key_imgs),
+        ReportsTab(screen, fonts, CONTENT_Y, CONTENT_H, ADMIN_DIR, key_imgs),
     ]
     current = 0
     tabs[current].on_enter()

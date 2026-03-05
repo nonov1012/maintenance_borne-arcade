@@ -31,13 +31,15 @@ class ReportsTab:
     ROW_H    = 50
     LINE_H   = 18
 
-    def __init__(self, screen: pygame.Surface, fonts, content_y: int, content_h: int, admin_dir: Path):
+    def __init__(self, screen: pygame.Surface, fonts, content_y: int, content_h: int,
+                 admin_dir: Path, key_imgs: dict | None = None):
         self.screen    = screen
         self.f_big, self.f_med, self.f_small = fonts
         self.cy        = content_y
         self.ch        = content_h
         self.admin_dir = admin_dir
         self.W         = screen.get_width()
+        self._key_imgs = key_imgs or {}
 
         self.reports: List[Path] = []
         self.selected: int = 0
@@ -145,15 +147,25 @@ class ReportsTab:
         self._draw_hints_list()
 
     def _draw_hints_list(self):
-        y = self.cy + self.ch - 40
+        row_h = 40
+        y = self.cy + self.ch - row_h
         pygame.draw.line(self.screen, _BORDER, (20, y), (self.W - 20, y), 1)
-        hints = [("F", "Ouvrir"), ("R", "Rafraîchir")]
+        hints = [("f", "Ouvrir"), ("r", "Rafraîchir")]
         x = 30
+        fh = self.f_small.get_height()
         for k, d in hints:
-            ks = self.f_small.render(f"[{k}]", True, _ACCENT)
+            img = self._key_imgs.get(k)
+            if img:
+                ih = img.get_height()
+                self.screen.blit(img, (x, y + (row_h - ih) // 2))
+                x += img.get_width() + 6
+            else:
+                ks = self.f_small.render(f"[{k.upper()}]", True, _ACCENT)
+                self.screen.blit(ks, (x, y + (row_h - fh) // 2))
+                x += ks.get_width() + 4
             ds = self.f_small.render(d, True, _MUTED)
-            self.screen.blit(ks, (x, y + 12)); x += ks.get_width() + 4
-            self.screen.blit(ds, (x, y + 12)); x += ds.get_width() + 28
+            self.screen.blit(ds, (x, y + (row_h - fh) // 2))
+            x += ds.get_width() + 28
 
     def _draw_viewer(self):
         # Fond
@@ -182,6 +194,21 @@ class ReportsTab:
             pygame.draw.rect(self.screen, _ACCENT,  (self.W - 12, thumb_y,       8, thumb_h), border_radius=4)
 
         # Bas
-        y = self.cy + self.ch - 30
+        row_h = 30
+        y = self.cy + self.ch - row_h
         pygame.draw.line(self.screen, _BORDER, (0, y), (self.W, y), 1)
-        self.screen.blit(self.f_small.render("[R] Fermer    [↑↓] Scroller", True, _MUTED), (20, y + 8))
+        fh = self.f_small.get_height()
+        x = 20
+        img = self._key_imgs.get("r")
+        if img:
+            ih = img.get_height()
+            self.screen.blit(img, (x, y + (row_h - ih) // 2))
+            x += img.get_width() + 6
+        else:
+            rs = self.f_small.render("[R]", True, _ACCENT)
+            self.screen.blit(rs, (x, y + (row_h - fh) // 2))
+            x += rs.get_width() + 4
+        self.screen.blit(
+            self.f_small.render("Fermer    [↑↓] Scroller", True, _MUTED),
+            (x, y + (row_h - fh) // 2),
+        )
