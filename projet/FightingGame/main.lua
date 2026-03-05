@@ -10,9 +10,10 @@ local ROUNDS_TO_WIN = 2
 local TIMER_MAX     = 99
 
 -- ── État global ───────────────────────────────────────────────────────────────
-local scene         -- "countdown" | "fight" | "roundend" | "matchend"
+local scene         -- "title" | "countdown" | "fight" | "roundend" | "matchend"
 local paused        -- bool : pause overlay actif
 local pausedBy      -- 1 | 2 : qui a mis la pause
+local titleT = 0    -- timer animation du titre
 local fighters
 local timer
 local roundsWon     -- { [1]=0, [2]=0 }
@@ -64,12 +65,14 @@ function love.load()
 
     love.graphics.setLineWidth(1)
 
+    GROUND_Y  = math.floor(H * 0.82)   -- nécessaire pour drawBackground sur le titre
     roundsWon    = { 0, 0 }
     currentRound = 1
     matchWinner  = nil
     paused       = false
     pausedBy     = nil
-    startRound()
+    titleT       = 0
+    scene        = "title"
 end
 
 -- ── Collision détection ───────────────────────────────────────────────────────
@@ -151,6 +154,12 @@ end
 function love.update(dt)
     if paused then return end
     dt = math.min(dt, 0.05)
+
+    if scene == "title" then
+        titleT = titleT + dt
+        return
+    end
+
     sceneTimer = sceneTimer - dt
 
     if scene == "countdown" then
@@ -215,6 +224,19 @@ local P2_KEYS = { k=true, m=true, o=true, l=true,
                   q=true, s=true, d=true, a=true, z=true }
 
 function love.keypressed(key)
+    -- ── Écran titre ──────────────────────────────────────────────────────────
+    if scene == "title" then
+        if key == "y" or key == "6" or key == "e" or key == "escape" then
+            love.event.quit()
+        else
+            roundsWon    = { 0, 0 }
+            currentRound = 1
+            matchWinner  = nil
+            startRound()
+        end
+        return
+    end
+
     -- Quitter depuis l'écran de fin de match
     if scene == "matchend" then
         if key == "y" or key == "6" or key == "e" or key == "escape" then
@@ -457,7 +479,129 @@ local function drawPause()
     end
 end
 
+local function drawFighterSilhouette(cx, groundY, facing, color, state)
+    local w, h = 56, 112
+    local bx = cx - w / 2
+    local by = groundY - h
+    -- Corps
+    love.graphics.setColor(color[1], color[2], color[3])
+    love.graphics.rectangle("fill", bx, by, w, h, 10, 10)
+    love.graphics.setColor(0, 0, 0, 0.3)
+    love.graphics.rectangle("line", bx, by, w, h, 10, 10)
+    -- Tête
+    local headY = by - 22
+    love.graphics.setColor(color[1] * 1.2 > 1 and 1 or color[1] * 1.2,
+                           color[2] * 1.2 > 1 and 1 or color[2] * 1.2,
+                           color[3] * 1.2 > 1 and 1 or color[3] * 1.2)
+    love.graphics.circle("fill", cx, headY, 21)
+    -- Yeux
+    love.graphics.setColor(0.05, 0.05, 0.05)
+    love.graphics.circle("fill", cx + facing * 4,  headY - 2, 4)
+    love.graphics.circle("fill", cx + facing * 12, headY - 2, 4)
+    -- Poing tendu si en "attack"
+    if state == "attack" then
+        local px = facing == 1 and (cx + w/2 + 40) or (cx - w/2 - 40)
+        love.graphics.setColor(1, 0.75, 0.1)
+        love.graphics.circle("fill", px, groundY - h * 0.65, 14)
+        love.graphics.setColor(color[1], color[2], color[3])
+        love.graphics.line(cx + facing * (w/2), groundY - h * 0.65, px, groundY - h * 0.65)
+    end
+end
+
+local function drawTitle()
+    drawBackground()
+
+    local t = titleT
+
+    -- Silhouettes des 2 fighters
+    local gy = GROUND_Y
+    -- P1 en pose d'attaque (bras tendu)
+    drawFighterSilhouette(W * 0.28, gy,  1, {0.25, 0.55, 1.0}, "attack")
+    -- P2 en pose de garde
+    drawFighterSilhouette(W * 0.72, gy, -1, {1.0, 0.30, 0.22}, "attack")
+
+    -- Ombre sous les fighters
+    love.graphics.setColor(0, 0, 0, 0.18)
+    love.graphics.ellipse("fill", W * 0.28, gy + 5, 36, 9)
+    love.graphics.ellipse("fill", W * 0.72, gy + 5, 36, 9)
+
+    -- Ligne VS au centre
+    love.graphics.setColor(1, 1, 1, 0.15)
+    love.graphics.setLineWidth(2)
+    love.graphics.line(W/2, gy - 130, W/2, gy)
+    love.graphics.setLineWidth(1)
+
+    -- "VS" pulsant
+    local vsPulse = 1 + math.sin(t * 3) * 0.08
+    love.graphics.push()
+    love.graphics.translate(W / 2, gy - 70)
+    love.graphics.scale(vsPulse, vsPulse)
+    love.graphics.setFont(fMed)
+    local vs = "VS"
+    love.graphics.setColor(1, 0.85, 0.1)
+    love.graphics.print(vs, -fMed:getWidth(vs)/2, -fMed:getHeight()/2)
+    love.graphics.pop()
+
+    -- Sous-titre "IUT"
+    love.graphics.setFont(fSml)
+    love.graphics.setColor(0.55, 0.55, 0.75)
+    local sub = "IUT BORDEAUX MONTAIGNE"
+    love.graphics.print(sub, centerX(sub, fSml), H * 0.10)
+
+    -- Titre principal "FIGHT" avec scale pulsante
+    local pulse = 1 + math.sin(t * 2.2) * 0.03
+    love.graphics.push()
+    love.graphics.translate(W / 2, H * 0.24)
+    love.graphics.scale(pulse, pulse)
+    love.graphics.setFont(fBig)
+    local title = "FIGHT!"
+    -- Ombre portée
+    love.graphics.setColor(0.8, 0.1, 0.05, 0.5)
+    love.graphics.print(title, -fBig:getWidth(title)/2 + 4, -fBig:getHeight()/2 + 4)
+    -- Texte principal dégradé rouge→orange
+    love.graphics.setColor(1, 0.35, 0.05)
+    love.graphics.print(title, -fBig:getWidth(title)/2, -fBig:getHeight()/2)
+    love.graphics.pop()
+
+    -- Contrôles hint en bas (petit)
+    love.graphics.setFont(fSml)
+    love.graphics.setColor(0.45, 0.45, 0.6)
+    local hints = {
+        { "P1", {0.25,0.55,1.0}, "fleches + 1/2/3/4/5/6  " },
+        { "P2", {1.0,0.30,0.22}, "o/k/l/m + q/s/d/a/z/e" },
+    }
+    local hintY = H * 0.88
+    for i, h in ipairs(hints) do
+        local lineX = W * 0.22 + (i-1) * W * 0.38
+        love.graphics.setColor(h[2][1], h[2][2], h[2][3])
+        love.graphics.print(h[1] .. " : ", lineX, hintY)
+        love.graphics.setColor(0.55, 0.55, 0.7)
+        love.graphics.print(h[3], lineX + fSml:getWidth(h[1] .. " : "), hintY)
+    end
+
+    -- "APPUYEZ SUR UNE TOUCHE" clignotant
+    local blink = math.floor(t * 1.8) % 2 == 0
+    if blink then
+        love.graphics.setFont(fSml)
+        love.graphics.setColor(0.9, 0.9, 0.9)
+        local msg = "APPUYEZ SUR UNE TOUCHE POUR JOUER"
+        love.graphics.print(msg, centerX(msg, fSml), H * 0.78)
+    end
+
+    -- "Y/E → QUITTER" discret
+    love.graphics.setFont(fSml)
+    love.graphics.setColor(0.35, 0.35, 0.45)
+    local qmsg = "Y / E  ->  QUITTER"
+    love.graphics.print(qmsg, centerX(qmsg, fSml), H * 0.93)
+end
+
 function love.draw()
+    if scene == "title" then
+        drawTitle()
+        love.graphics.setColor(1, 1, 1)
+        return
+    end
+
     drawBackground()
 
     if fighters then
