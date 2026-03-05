@@ -1,5 +1,7 @@
 #!/bin/bash
 
+setxkbmap -symbols 'pc+borne(basic)+inet(evdev)' 2>/dev/null || \
+setxkbmap -symbols 'pc+borne(basic)' 2>/dev/null || \
 setxkbmap borne 2>/dev/null || true
 
 # Forcer la sortie audio sur le jack 3.5mm (0=auto, 1=jack, 2=HDMI)

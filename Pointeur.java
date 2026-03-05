@@ -36,6 +36,9 @@ public class Pointeur {
 	String setupKeymap =
 	    "[ -f /usr/share/X11/xkb/symbols/borne ] || " +
 	    "sudo cp \"" + borneFile + "\" /usr/share/X11/xkb/symbols/borne 2>/dev/null || true; " +
+	    // -symbols bypasse la base de règles evdev (plus fiable qu'un simple setxkbmap borne)
+	    "setxkbmap -symbols 'pc+borne(basic)+inet(evdev)' 2>/dev/null || " +
+	    "setxkbmap -symbols 'pc+borne(basic)' 2>/dev/null || " +
 	    "setxkbmap borne 2>/dev/null || true";
 	// Forcer la sortie audio jack (numid=3 val=1 sur RPi: 0=auto, 1=jack, 2=HDMI)
 	String setupAudio = "amixer cset numid=3 1 2>/dev/null || true";

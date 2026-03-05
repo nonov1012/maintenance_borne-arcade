@@ -139,6 +139,22 @@ chmod +x ./*.sh
 info "Installation du layout clavier XKB..."
 sudo cp "$BORNE_DIR/borne" /usr/share/X11/xkb/symbols/borne
 
+# Enregistrer le layout dans les règles XKB (requis pour que setxkbmap borne fonctionne)
+sudo python3 -c "
+import re, sys
+path = '/usr/share/X11/xkb/rules/evdev.lst'
+try:
+    content = open(path).read()
+    if 'borne' not in content:
+        content = re.sub(r'(! layout\n)', r'\1  borne           Borne Arcade\n', content, count=1)
+        open(path, 'w').write(content)
+        print('Layout borne ajouté à evdev.lst')
+    else:
+        print('Layout borne déjà présent dans evdev.lst')
+except Exception as e:
+    print(f'Avertissement: {e}', file=sys.stderr)
+" 2>/dev/null || warn "Impossible d'enregistrer le layout borne dans evdev.lst (non critique)"
+
 info "Compilation des jeux Java..."
 bash compilation.sh
 
