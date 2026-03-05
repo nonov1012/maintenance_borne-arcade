@@ -1,0 +1,10 @@
+IUT Fight - Jeu de combat 2 joueurs
+
+Affronte ton adversaire dans un combat
+au tour par tour - Best of 3 rounds.
+
+Attaque, bloque, saute et enchaîne
+les coups pour mettre KO l'ennemi.
+
+Timer: 99s par round
+Bouton BAS du joystick = accroupi/esquive
