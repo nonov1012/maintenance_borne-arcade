@@ -76,7 +76,7 @@ class Game():
             self.screen.blit(FONT.render('NIVEAU ' + str(self.level), True, (0, 0, 0)),(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
             return False, False
             
-        if pygame.key.get_pressed()[pygame.K_f]:
+        if pygame.key.get_pressed()[pygame.K_f] or pygame.key.get_pressed()[pygame.K_AMPERSAND]:
             if self.perdu:
                 return True,False
             else:
@@ -220,12 +220,12 @@ class Game():
                     break
                 
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r:
+                    if event.key in (pygame.K_r, pygame.K_QUOTE):
                         # Valider le pseudo et enregistrer le score
                         pseudo = ''.join([alphabet[i] for i in pseudo_chars])
                         self._saveScore(pseudo)
                         input_active = False
-                    elif event.key == pygame.K_f:
+                    elif event.key in (pygame.K_f, pygame.K_AMPERSAND):
                         # Annuler la saisie
                         input_active = False
                     elif event.key == pygame.K_UP:

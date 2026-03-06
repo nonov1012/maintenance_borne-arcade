@@ -22,6 +22,13 @@ local roundWinner   -- 1 | 2 | "draw"
 local matchWinner   -- 1 | 2 | nil
 local sceneTimer
 
+-- ── Effets visuels & Son ──────────────────────────────────────────────────────
+local particles  = {}    -- {x,y,vx,vy,life,maxLife,r,g,b}
+local shakeT     = 0     -- durée restante screen-shake (s)
+local shakeAmt   = 0     -- amplitude max (px)
+local hitFlashT  = 0     -- flash blanc sur coup fort (s)
+local sndPunch, sndHurt, sndKO
+
 -- ── Fonts ─────────────────────────────────────────────────────────────────────
 local fBig, fMed, fSml
 
@@ -41,6 +48,75 @@ local function printCenter(text, y, font, r, g, b, a)
     love.graphics.setFont(font)
     love.graphics.setColor(r or 1, g or 1, b or 1, a or 1)
     love.graphics.print(text, centerX(text, font), y)
+end
+
+-- ── Sons procéduraux ──────────────────────────────────────────────────────────
+local function genSound(dur, fn)
+    local sr = 22050
+    local n  = math.floor(sr * dur)
+    local sd = love.sound.newSoundData(n, sr, 16, 1)
+    for i = 0, n - 1 do
+        local t = i / sr
+        sd:setSample(i, math.max(-1, math.min(1, fn(t))))
+    end
+    return love.audio.newSource(sd, "static")
+end
+
+local function initSounds()
+    math.randomseed(99999)
+    sndPunch = genSound(0.13, function(t)
+        local e = math.exp(-t * 30)
+        return (math.random() * 2 - 1) * e * 0.55
+             + math.sin(t * math.pi * 2 * 145) * e * 0.45
+    end)
+    sndHurt = genSound(0.28, function(t)
+        local e = math.exp(-t * 9)
+        local f = math.max(40, 370 - t * 1100)
+        return math.sin(t * math.pi * 2 * f) * e * 0.55
+             + (math.random() * 2 - 1) * e * 0.22
+    end)
+    sndKO = genSound(0.62, function(t)
+        local e = math.exp(-t * 4.5)
+        local f = math.max(18, 95 - t * 110)
+        return math.sin(t * math.pi * 2 * f) * e * 0.85
+             + (math.random() * 2 - 1) * e * 0.30
+    end)
+    math.randomseed(42)   -- remet la seed pour drawBackground
+end
+
+-- ── Particules ────────────────────────────────────────────────────────────────
+local function spawnHitSparks(x, y, dmg, dir)
+    local heavy = dmg >= 15
+    local count = heavy and 14 or 7
+    for _ = 1, count do
+        local angle = math.random() * math.pi * 2
+        local spd   = 120 + math.random() * 240
+        local life  = 0.20 + math.random() * 0.22
+        particles[#particles + 1] = {
+            x = x, y = y,
+            vx = math.cos(angle) * spd + dir * 90,
+            vy = math.sin(angle) * spd - 90,
+            life = life, maxLife = life,
+            r = 1, g = heavy and 0.2 or 0.8, b = 0.05,
+        }
+    end
+end
+
+local function spawnKOBurst(x, y, color)
+    for _ = 1, 30 do
+        local angle = math.random() * math.pi * 2
+        local spd   = 180 + math.random() * 400
+        local life  = 0.45 + math.random() * 0.70
+        particles[#particles + 1] = {
+            x = x, y = y,
+            vx = math.cos(angle) * spd,
+            vy = math.sin(angle) * spd - 200,
+            life = life, maxLife = life,
+            r = color[1] * 0.7 + 0.3,
+            g = color[2] * 0.7 + 0.3,
+            b = color[3] * 0.7 + 0.3,
+        }
+    end
 end
 
 -- ── Initialisation d'un round ─────────────────────────────────────────────────
@@ -73,6 +149,7 @@ function love.load()
     pausedBy     = nil
     titleT       = 0
     scene        = "title"
+    initSounds()
 end
 
 -- ── Collision détection ───────────────────────────────────────────────────────
@@ -90,6 +167,21 @@ local function checkHit(atk, def)
         atk.hitDone = true
         local a = atk.atk
         def:receiveHit(a.dmg, atk.facing, a.kb)
+        -- Effets visuels
+        local hx = (atk.x + def.x) / 2
+        local hy = def.y - def.h * 0.55
+        spawnHitSparks(hx, hy, a.dmg, atk.facing)
+        shakeT   = 0.08 + a.dmg * 0.006
+        shakeAmt = 3    + a.dmg * 0.55
+        if a.dmg >= 10 then hitFlashT = 0.04 + a.dmg * 0.003 end
+        -- Son
+        if sndKO and sndHurt and sndPunch then
+            local snd   = (def.hp <= 0) and sndKO
+                       or (a.dmg >= 10  and sndHurt or sndPunch)
+            local clone = snd:clone()
+            clone:setVolume(0.78)
+            clone:play()
+        end
     end
 end
 
@@ -140,6 +232,11 @@ local function checkRoundEnd()
 
     if roundWinner ~= "draw" then
         roundsWon[roundWinner] = roundsWon[roundWinner] + 1
+        -- Burst KO + shake fort
+        local loser = fighters[roundWinner == 1 and 2 or 1]
+        spawnKOBurst(loser.x, loser.y - loser.h * 0.5, loser.color)
+        shakeT   = 0.45
+        shakeAmt = 10
     end
 
     if     roundsWon[1] >= ROUNDS_TO_WIN then matchWinner = 1
@@ -154,6 +251,18 @@ end
 function love.update(dt)
     if paused then return end
     dt = math.min(dt, 0.05)
+
+    -- Mise à jour effets
+    shakeT    = math.max(0, shakeT    - dt)
+    hitFlashT = math.max(0, hitFlashT - dt)
+    for i = #particles, 1, -1 do
+        local p = particles[i]
+        p.x    = p.x + p.vx * dt
+        p.y    = p.y + p.vy * dt
+        p.vy   = p.vy + 720 * dt   -- gravité légère
+        p.life = p.life - dt
+        if p.life <= 0 then table.remove(particles, i) end
+    end
 
     if scene == "title" then
         titleT = titleT + dt
@@ -297,13 +406,18 @@ local function drawBackground()
     love.graphics.setColor(0.04, 0.04, 0.14)
     love.graphics.circle("fill", W * 0.5 + H * 0.04, H * 0.18 - H * 0.01, math.floor(H * 0.055))
 
-    -- Étoiles décoratives
+    -- Étoiles scintillantes
     math.randomseed(42)
-    love.graphics.setColor(1, 1, 1, 0.5)
+    local now = love.timer.getTime()
     for _ = 1, 40 do
-        local sx = math.random(W)
-        local sy = math.random(math.floor(H * 0.55))
-        love.graphics.circle("fill", sx, sy, 1.5)
+        local sx    = math.random(W)
+        local sy    = math.random(math.floor(H * 0.55))
+        local phase = math.random() * math.pi * 2
+        local spd   = math.random() * 2.5 + 0.8
+        local alpha = 0.18 + math.abs(math.sin(now * spd + phase)) * 0.72
+        local sz    = 0.7  + math.abs(math.sin(now * spd * 0.6 + phase)) * 2.0
+        love.graphics.setColor(1, 1, 1, alpha)
+        love.graphics.circle("fill", sx, sy, sz)
     end
 
     -- Sol
@@ -337,9 +451,14 @@ local function drawHPBar(x, y, w, h, hp, maxhp, flipped, name, color)
     local barW  = math.floor((w - 4) * ratio)
     local barX  = flipped and (x + 2 + (w - 4) - barW) or (x + 2)
 
-    if     ratio > 0.5 then love.graphics.setColor(0.15, color[2] * 0.9 + 0.1, color[3] * 0.3)
-    elseif ratio > 0.25 then love.graphics.setColor(0.85, 0.65, 0.08)
-    else                     love.graphics.setColor(0.9,  0.08, 0.08) end
+    if ratio > 0.5 then
+        love.graphics.setColor(0.15, color[2] * 0.9 + 0.1, color[3] * 0.3)
+    elseif ratio > 0.25 then
+        love.graphics.setColor(0.85, 0.65, 0.08)
+    else
+        local pulse = 0.72 + math.abs(math.sin(love.timer.getTime() * 7)) * 0.28
+        love.graphics.setColor(0.9 * pulse, 0.06, 0.06)
+    end
 
     if barW > 0 then
         love.graphics.rectangle("fill", barX, y + 2, barW, h - 4, 3, 3)
@@ -424,8 +543,15 @@ local function drawRoundEnd()
     else
         local wname = "PLAYER " .. roundWinner
         local wc    = fighters[roundWinner] and fighters[roundWinner].color or {1,1,1}
-        printCenter("K.O.", H * 0.35, fBig, 1, 0.12, 0.12)
-        printCenter(wname .. " WINS", H * 0.52, fMed, wc[1], wc[2], wc[3])
+        local t  = love.timer.getTime()
+        local kr = 0.88 + math.sin(t * 9) * 0.12
+        local kg = 0.04 + math.abs(math.sin(t * 4.5)) * 0.12
+        printCenter("K.O.", H * 0.35, fBig, kr, kg, 0.04)
+        local wp = 0.72 + math.abs(math.sin(t * 2.8)) * 0.28
+        printCenter(wname .. " WINS", H * 0.52, fMed,
+            wc[1] * wp + 0.18 * (1 - wp),
+            wc[2] * wp + 0.18 * (1 - wp),
+            wc[3] * wp + 0.18 * (1 - wp))
     end
 end
 
@@ -434,9 +560,18 @@ local function drawMatchEnd()
     love.graphics.rectangle("fill", 0, 0, W, H)
 
     if matchWinner then
+        local t  = love.timer.getTime()
         local wc = fighters and fighters[matchWinner] and fighters[matchWinner].color or {1,1,1}
-        printCenter("PLAYER " .. matchWinner, H * 0.28, fBig, wc[1], wc[2], wc[3])
-        printCenter("WINS THE MATCH!", H * 0.44, fMed, 1, 0.88, 0.1)
+        local wp = 0.70 + math.abs(math.sin(t * 2.5)) * 0.30
+        printCenter("PLAYER " .. matchWinner, H * 0.28, fBig,
+            wc[1] * wp + 0.15 * (1 - wp),
+            wc[2] * wp + 0.15 * (1 - wp),
+            wc[3] * wp + 0.15 * (1 - wp))
+        -- Texte "WINS THE MATCH!" en couleurs arc-en-ciel cycliques
+        local r = 0.5 + math.sin(t * 3.0) * 0.5
+        local g = 0.5 + math.sin(t * 3.0 + math.pi * 2 / 3) * 0.5
+        local b = 0.5 + math.sin(t * 3.0 + math.pi * 4 / 3) * 0.5
+        printCenter("WINS THE MATCH!", H * 0.44, fMed, r, g, b)
     end
 
     -- Clignotement des options
@@ -596,8 +731,20 @@ local function drawTitle()
 end
 
 function love.draw()
+    -- Calcul shake (une fois par frame)
+    local sx, sy = 0, 0
+    if shakeT > 0 then
+        local mag = shakeAmt * math.min(1, shakeT / 0.12)
+        sx = (math.random() * 2 - 1) * mag
+        sy = (math.random() * 2 - 1) * mag * 0.55
+    end
+
+    love.graphics.push()
+    love.graphics.translate(sx, sy)
+
     if scene == "title" then
         drawTitle()
+        love.graphics.pop()
         love.graphics.setColor(1, 1, 1)
         return
     end
@@ -611,12 +758,29 @@ function love.draw()
         end
     end
 
+    -- Particules de coup
+    for _, p in ipairs(particles) do
+        local a  = (p.life / p.maxLife) ^ 0.6
+        local sz = 2.5 + (1 - p.life / p.maxLife) * 2.5
+        love.graphics.setColor(p.r, p.g, p.b, a)
+        love.graphics.circle("fill", p.x, p.y, sz)
+    end
+
     if     scene == "countdown" then drawCountdown()
     elseif scene == "roundend"  then drawRoundEnd()
     elseif scene == "matchend"  then drawMatchEnd()
     end
 
     if paused then drawPause() end
+
+    love.graphics.pop()
+
+    -- Flash blanc (sans shake, par-dessus tout)
+    if hitFlashT > 0 then
+        local a = math.min(0.48, hitFlashT * 7)
+        love.graphics.setColor(1, 1, 1, a)
+        love.graphics.rectangle("fill", 0, 0, W, H)
+    end
 
     love.graphics.setColor(1, 1, 1)
 end

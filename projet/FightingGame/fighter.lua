@@ -311,6 +311,33 @@ function Fighter:draw()
         love.graphics.setLineWidth(1)
     end
 
+    -- Lueur de charge pendant les startup frames d'attaque
+    if self.state == "attack" and self.atk then
+        local a = self.atk
+        if self.stateT < a.su then
+            local prog  = self.stateT / a.su
+            local glow  = 10 + prog * 22
+            local galpha = prog * 0.70
+            love.graphics.setColor(1, 0.85 - prog * 0.35, 0.1, galpha)
+            love.graphics.setLineWidth(2 + prog * 4)
+            love.graphics.circle("line", self.x, by + bh / 2, glow)
+            love.graphics.setLineWidth(1)
+        end
+    end
+
+    -- Étoiles de douleur pendant hurt
+    if self.state == "hurt" then
+        local t = love.timer.getTime()
+        for i = 1, 3 do
+            local angle  = t * 4.5 + i * (math.pi * 2 / 3)
+            local radius = 30 + math.sin(t * 6 + i) * 6
+            local stx    = self.x + math.cos(angle) * radius
+            local sty    = headY - 12 + math.sin(angle * 0.8) * 8
+            love.graphics.setColor(1, 1, 0.15, 0.88)
+            love.graphics.circle("fill", stx, sty, 5)
+        end
+    end
+
     -- Hitbox attaque
     local ax, ay, aw, ah = self:atkRect()
     if ax then

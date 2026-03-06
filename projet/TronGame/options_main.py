@@ -121,7 +121,7 @@ class Options:
                 if self.items[self.selected_index].next_option():
                     if self.sound_navigate:
                         self.sound_navigate.play()
-                    self.apply_option_change()            # Sélection / Confirmation            elif event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_r]:
+                    self.apply_option_change()            # Sélection / Confirmation            elif event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_r, pygame.K_QUOTE]:
                 if self.sound_select:
                     self.sound_select.play()
 
@@ -130,7 +130,7 @@ class Options:
                     return "menu"
                     
             # Retour au menu avec la touche F (comme Escape)
-            elif event.key in [pygame.K_ESCAPE, pygame.K_f]:
+            elif event.key in [pygame.K_ESCAPE, pygame.K_f, pygame.K_AMPERSAND]:
                 if self.sound_select:
                     self.sound_select.play()
                 return "menu"

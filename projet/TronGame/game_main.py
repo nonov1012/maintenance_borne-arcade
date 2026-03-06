@@ -88,10 +88,10 @@ class Game:
     def handle_event(self, event):
         """Gère les événements du jeu"""
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_p or event.key == pygame.K_f:
+            if event.key == pygame.K_p or event.key in (pygame.K_f, pygame.K_AMPERSAND):
                 # Mettre en pause / reprendre
                 self.pause = not self.pause
-            elif (event.key == pygame.K_SPACE or event.key == pygame.K_r) and self.game_over:
+            elif (event.key == pygame.K_SPACE or event.key in (pygame.K_r, pygame.K_QUOTE)) and self.game_over:
                 # Redémarrer après game over
                 self.__init__(self.screen, self.mode, self.difficulty)
             else:

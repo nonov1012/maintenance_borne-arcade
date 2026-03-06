@@ -128,11 +128,11 @@ def run_menu():
                     selected_index = (selected_index - 1) % len(beatmaps)
                 elif event.key == MENU_DOWN_KEY:
                     selected_index = (selected_index + 1) % len(beatmaps)
-                elif event.key == MENU_SELECT_KEY:
+                elif event.key in MENU_SELECT_KEY:
                     result = play_map(beatmaps[selected_index])
                     if result == "quit":
                         running = False
-                elif event.key == MENU_QUIT_KEY:
+                elif event.key in MENU_QUIT_KEY:
                     running = False
 
         clock.tick(FPS)

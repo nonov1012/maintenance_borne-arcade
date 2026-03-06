@@ -113,7 +113,7 @@ def end_screen(screen, font, score, total_notes, max_combo):
                     return "retry"
                 elif event.key == MENU_BACK_TO_MENU_KEY:
                     return "menu"
-                elif event.key == MENU_QUIT_KEY:
+                elif event.key in MENU_QUIT_KEY:
                     return "quit"
 
 
@@ -153,7 +153,7 @@ def play_map(filename):
             if event.type == pygame.QUIT:
                 return "quit"
             elif event.type == pygame.KEYDOWN:
-                if event.key == PAUSE_KEY:
+                if event.key in PAUSE_KEY:
                     paused = True
                     pygame.mixer.music.pause()
                     draw_pause_menu(screen, font)
@@ -162,7 +162,7 @@ def play_map(filename):
                             if pe.type == pygame.QUIT:
                                 return "quit"
                             elif pe.type == pygame.KEYDOWN:
-                                if pe.key == MENU_RESUME_KEY:
+                                if pe.key in MENU_RESUME_KEY:
                                     countdown(
                                         screen,
                                         font,
@@ -175,11 +175,11 @@ def play_map(filename):
                                     start_time = time.time() - (current_time / 1000)
                                     pygame.mixer.music.unpause()
                                     paused = False
-                                elif pe.key == MENU_QUIT_KEY:
+                                elif pe.key in MENU_QUIT_KEY:
                                     return "menu"
                 else:
-                    for lane, key in KEY_MAPPING.items():
-                        if key is not None and event.key == key:
+                    for lane, keys in KEY_MAPPING.items():
+                        if keys is not None and event.key in keys:
                             for tile in tiles:
                                 if tile.hit:
                                     continue

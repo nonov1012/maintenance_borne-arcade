@@ -5,11 +5,17 @@ class Button:
         self.__buttons = {
             # Premier joueur
             pygame.K_r: False,
+            pygame.K_QUOTE: False,       # ' (alt r)
             pygame.K_t: False,
+            pygame.K_LEFTPAREN: False,   # ( (alt t)
             pygame.K_y: False,
+            pygame.K_MINUS: False,       # - (alt y)
             pygame.K_f: False,
+            pygame.K_AMPERSAND: False,   # & (alt f)
             pygame.K_g: False,
+            233: False,                  # é (alt g)
             pygame.K_h: False,  # Entrer
+            pygame.K_QUOTEDBL: False,    # " (alt h)
             # Deuxieme joueur
             pygame.K_a: False,
             pygame.K_z: False,
@@ -33,17 +39,17 @@ class Button:
         elif event.key in (pygame.K_RIGHT, pygame.K_m):
             return (1, 0)
 
-        if event.key == pygame.K_h:
+        if event.key in (pygame.K_h, pygame.K_QUOTEDBL):
             return "enter"
-        if event.key == pygame.K_r:
+        if event.key in (pygame.K_r, pygame.K_QUOTE):
             return 0
-        if event.key == pygame.K_t:
+        if event.key in (pygame.K_t, pygame.K_LEFTPAREN):
             return 1
-        if event.key == pygame.K_y:
+        if event.key in (pygame.K_y, pygame.K_MINUS):
             return 2
-        if event.key == pygame.K_f:
+        if event.key in (pygame.K_f, pygame.K_AMPERSAND):
             return 3
-        if event.key == pygame.K_g:
+        if event.key in (pygame.K_g, 233):
             return 4
 
         return None

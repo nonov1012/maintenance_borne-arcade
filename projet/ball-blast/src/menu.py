@@ -35,7 +35,7 @@ class Menu():
                     else:
                         self.selectedOption -= 1
 
-                if event.key == pygame.K_r:
+                if event.key in (pygame.K_r, pygame.K_QUOTE):
                     #pygame.mixer.Sound.play(self.sonMenu)
                     if pause:
                         if self.selectedOption == 0:

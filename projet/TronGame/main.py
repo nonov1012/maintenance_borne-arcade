@@ -75,7 +75,7 @@ class TronGame:
                 if event.type == pygame.QUIT:
                     self.running = False
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_f:  # ESCAPE ou touche f
+                    if event.key == pygame.K_ESCAPE or event.key in (pygame.K_f, pygame.K_AMPERSAND):  # ESCAPE ou touche f
                         if self.current_state in ["game", "options", "score_screen"]:
                             self.current_state = "menu"
                             self.play_music("./assets/sounds/music_menu.wav")
