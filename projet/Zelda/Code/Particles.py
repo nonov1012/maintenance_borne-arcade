@@ -12,14 +12,14 @@ class AnimationPlayer:
     def __init__(self):
         self.frames = {
 			# Magic
-			"flame": import_folder("../Graphics/Particles/Flame/Frames"),
+			"flame": import_folder("../Graphics/Particles/Flame/frames"),
 			"aura": import_folder("../Graphics/Particles/Aura"),
-			"heal": import_folder("../Graphics/Particles/Heal/Frames"),
-			
-			# Attacks 
+			"heal": import_folder("../Graphics/Particles/Heal/frames"),
+
+			# Attacks
 			"claw": import_folder("../Graphics/Particles/Claw"),
 			"slash": import_folder("../Graphics/Particles/Slash"),
-			"sparkle": import_folder("../Graphics/Particles/Sparkle"),
+			"sparkle": import_folder("../Graphics/Particles/sparkle"),
 			"leaf_attack": import_folder("../Graphics/Particles/leaf_attack"),
 			"thunder": import_folder("../Graphics/Particles/Thunder"),
 
@@ -28,21 +28,21 @@ class AnimationPlayer:
 			"raccoon": import_folder("../Graphics/Particles/Raccoon"),
 			"spirit": import_folder("../Graphics/Particles/Nova"),
 			"bamboo": import_folder("../Graphics/Particles/Bamboo"),
-			
+
 			# Leafs
 			"leaf":(
-				import_folder("../Graphics/Particles/Leaf1"),
-				import_folder("../Graphics/Particles/Leaf2"),
-				import_folder("../Graphics/Particles/Leaf3"),
-				import_folder("../Graphics/Particles/Leaf4"),
-				import_folder("../Graphics/Particles/Leaf5"),
-				import_folder("../Graphics/Particles/Leaf6"),
-				self.reflect_images(import_folder("../Graphics/Particles/Leaf1")),
-				self.reflect_images(import_folder("../Graphics/Particles/Leaf2")),
-				self.reflect_images(import_folder("../Graphics/Particles/Leaf3")),
-				self.reflect_images(import_folder("../Graphics/Particles/Leaf4")),
-				self.reflect_images(import_folder("../Graphics/Particles/Leaf5")),
-				self.reflect_images(import_folder("../Graphics/Particles/Leaf6"))
+				import_folder("../Graphics/Particles/leaf1"),
+				import_folder("../Graphics/Particles/leaf2"),
+				import_folder("../Graphics/Particles/leaf3"),
+				import_folder("../Graphics/Particles/leaf4"),
+				import_folder("../Graphics/Particles/leaf5"),
+				import_folder("../Graphics/Particles/leaf6"),
+				self.reflect_images(import_folder("../Graphics/Particles/leaf1")),
+				self.reflect_images(import_folder("../Graphics/Particles/leaf2")),
+				self.reflect_images(import_folder("../Graphics/Particles/leaf3")),
+				self.reflect_images(import_folder("../Graphics/Particles/leaf4")),
+				self.reflect_images(import_folder("../Graphics/Particles/leaf5")),
+				self.reflect_images(import_folder("../Graphics/Particles/leaf6"))
 				)
 			}
 

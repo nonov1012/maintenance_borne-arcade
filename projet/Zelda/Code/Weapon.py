@@ -13,7 +13,7 @@ class Weapon(pygame.sprite.Sprite):
         direction = player.status.split("_")[0]
 
         # Graphics
-        full_path = f"../Graphics/Weapons/{player.weapon}/{direction}.png"
+        full_path = f"../Graphics/Weapons/{player.weapon.capitalize()}/{direction.capitalize()}.png"
         self.image = pygame.image.load(full_path).convert_alpha()
 
         # Placement
