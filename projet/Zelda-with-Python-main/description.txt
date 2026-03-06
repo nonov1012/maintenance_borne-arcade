@@ -1,0 +1,11 @@
+Zelda with Python - RPG action top-down
+
+Explore un monde ouvert, affronte des
+ennemis et améliore ton personnage.
+
+Collecte de l'expérience pour débloquer
+des améliorations : vie, énergie,
+attaque, magie et vitesse.
+
+5 armes et 2 sorts disponibles.
+Menu amélioration : touche G
