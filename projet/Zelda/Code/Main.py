@@ -15,7 +15,7 @@ class Game:
 
         # General setup
         pygame.init()
-        self.screen = pygame.display.set_mode((WIDTH, HEIGTH))
+        self.screen = pygame.display.set_mode((WIDTH, HEIGTH), pygame.FULLSCREEN)
         pygame .display.set_caption("Zelda with Python")
         pygame_icon = pygame.image.load("../Graphics/Test/Player.png")
         pygame.display.set_icon(pygame_icon)
@@ -35,9 +35,9 @@ class Game:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
-                    if event.key in (pygame.K_g, 233):  # g ou é
+                    if event.key in (pygame.K_h, pygame.K_QUOTEDBL):  # h ou "
                         self.level.toggle_menu()
-                    elif event.key in (pygame.K_h, pygame.K_QUOTEDBL):  # h ou "
+                    elif event.key in (pygame.K_y, pygame.K_MINUS):  # y ou -
                         pygame.quit()
                         sys.exit()
             

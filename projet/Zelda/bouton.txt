@@ -1,1 +1,1 @@
-Mouvement:Changer arme:Menu améliorations:Quitter:Attaque:Magie:Changer magie
+Mouvement:Changer arme:Changer magie:Quitter:Attaque:Magie:Paramètres

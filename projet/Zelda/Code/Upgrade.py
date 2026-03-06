@@ -41,7 +41,7 @@ class Upgrade:
                 self.can_move = False
                 self.selection_time = pygame.time.get_ticks()
 
-            if keys[pygame.K_r] or keys[pygame.K_QUOTE]:
+            if keys[pygame.K_f] or keys[pygame.K_AMPERSAND]:
                 self.can_move = False
                 self.selection_time = pygame.time.get_ticks()
                 self.item_list[self.selection_index].trigger(self.player)
